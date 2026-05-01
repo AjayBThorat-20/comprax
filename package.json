@@ -1,6 +1,6 @@
 {
   "name": "comprax",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Intelligent codebase compressor for LLM workflows - reduces token usage by 25-35% while preserving debugging context and code structure. Now with export detection and stack analysis.",
   "main": "src/index.js",
   "type": "module",
@@ -33,10 +33,10 @@
   ],
   "author": "Ajay Thorat <ajaythorat988@gmail.com>",
   "license": "MIT",
-  "dependencies": {
-    "chalk": "^4.1.2",
-    "commander": "^11.0.0",
-    "ora": "^5.4.1"
+"dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "ora": "^9.4.0"
   },
   "engines": {
     "node": ">=18.0.0"

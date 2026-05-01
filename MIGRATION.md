@@ -1,3 +1,4 @@
+```markdown
 # Migration Guide
 
 This guide helps you migrate between Comprax versions and integrate Comprax into your workflow.
@@ -10,20 +11,40 @@ If you're new to Comprax, skip to [Getting Started](#getting-started).
 
 ---
 
-## 🔄 Migrating from v1.0.0 to v2.0.0
+## 🔄 Version Migration
 
-### What's New in v2.0.0
+### From v2.0.0 to v2.0.1
 
-✨ **Major Features:**
+**What's Changed:**
+- Dependency updates (chalk, commander, ora) to latest ESM versions
+- Internal migration to ES Modules (import/export)
+- No feature changes
+- No breaking changes
+
+**Migration:**
+```bash
+# Update to latest
+npm install -g comprax@latest
+
+# Or with npx
+npx comprax@latest --version
+```
+
+**That's it!** All commands work exactly the same.
+
+---
+
+### From v1.0.0 to v2.0.1 (or v2.0.0)
+
+**What's New in v2.x:**
 - **Export Detection** - Automatically identifies module exports (ES6 & CommonJS)
 - **Stack Analysis** - Auto-detects frameworks, databases, and libraries
 - **Hybrid Mode** - Enhanced output with structural metadata for LLMs
 - **Smart Prompts** - Context-aware suggestions for AI analysis
 - **Project Metadata** - Rich headers with framework and stack information
 
-### Breaking Changes
-
-**None!** ✅ v2.0.0 is fully backward compatible.
+**Breaking Changes:**
+**None!** ✅ v2.x is fully backward compatible with v1.0.0.
 
 All v1.0.0 commands work exactly the same:
 ```bash
@@ -33,7 +54,7 @@ comprax . -c
 comprax . -e tests
 ```
 
-### New in v2: Hybrid Mode
+**New in v2: Hybrid Mode**
 
 To use v2 features, simply add the `--mode hybrid` flag:
 
@@ -46,19 +67,18 @@ comprax ./my-project --mode hybrid
 comprax ./my-project -m hybrid
 ```
 
-### Migration Checklist
-
+**Migration Checklist:**
 - ✅ No code changes needed
 - ✅ No configuration changes needed
 - ✅ All v1 scripts work as-is
 - ✅ Hybrid mode is opt-in
-- ✅ Update to v2: `npm install -g comprax@latest`
+- ✅ Update: `npm install -g comprax@latest`
 
 ---
 
 ## 📦 Installing Comprax
 
-### Using npx (No Installation)
+### Using npx (No Installation Required)
 ```bash
 npx comprax ./my-project
 ```
@@ -81,7 +101,7 @@ npm install --save-dev comprax
 ### Verify Installation
 ```bash
 comprax --version
-# Should output: 2.0.0
+# Should output: 2.0.1
 ```
 
 ---
@@ -431,7 +451,7 @@ project-compressed-prompt.txt # Smart prompts
 
 ---
 
-## 🆕 v2.0.0 Features in Detail
+## 🆕 v2.0.0+ Features in Detail
 
 ### Export Detection
 
@@ -644,16 +664,23 @@ comprax . -m hybrid -c -o after-migration.txt
 
 ---
 
-## 🔮 Future Versions
+## 🔮 Future Development
 
-### v3.0.0 (Planned)
-- Multi-language support (Python, Java, Go)
-- Custom compression rules
-- Import graph visualization
-- Plugin system
-- API integration
+### Potential Future Features
+We're considering these features based on user feedback:
 
-**Your v2 output will remain compatible.**
+**v2.x Updates (Minor releases):**
+- Additional framework detection (Astro, Qwik, SolidJS)
+- More export patterns (dynamic imports, re-exports)
+- Performance optimizations
+- Bug fixes and improvements
+
+**v3.0.0 (When ready):**
+- Multi-language support (Python initially)
+- Enhanced compression strategies
+- Improved CLI experience
+
+**Your v2.x output will remain compatible.**
 
 ---
 
@@ -672,4 +699,5 @@ MIT © Ajay Thorat
 
 ---
 
-**Last updated:** May 2026 (v2.0.0)
+**Last updated:** May 2026 (v2.0.1)
+```

@@ -4,7 +4,7 @@
 
 Compress your entire project into organized, LLM-optimized files while preserving debugging context and code structure. Reduce token usage by 25-35% without losing important information.
 
-**New in v2.0.0:** 🎉 Export detection, stack analysis, and hybrid mode for better LLM understanding!
+**New in v2.0:** 🎉 Export detection, stack analysis, and hybrid mode for better LLM understanding!
 
 [![npm version](https://img.shields.io/npm/v/comprax.svg)](https://www.npmjs.com/package/comprax)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,7 +23,7 @@ Compress your entire project into organized, LLM-optimized files while preservin
 - 📊 **Detailed Analytics** - Token estimation and compression statistics
 - ⚡ **Fast & Efficient** - Processes 50-100 files per second
 
-### New in v2.0.0 🎉
+### New in v2.0 🎉
 - 🔍 **Export Detection** - Automatically identifies module exports (ES6 & CommonJS)
 - 📦 **Stack Analysis** - Auto-detects frameworks, databases, and libraries
 - 🤖 **Hybrid Mode** - Enhanced output with structural metadata for LLMs
@@ -81,7 +81,7 @@ comprax ./my-project -m hybrid -v
 
 ---
 
-## ✨ v2.0.0: Hybrid Mode
+## ✨ v2.0: Hybrid Mode
 
 ### What is Hybrid Mode?
 
@@ -460,19 +460,22 @@ jobs:
 - Comment preservation
 - Flexible filtering
 
-### v2.0.0 ✅ (Current)
+### v2.0 ✅ (Current)
 - Export detection (9 patterns)
 - Stack detection (40+ frameworks/tools)
 - Hybrid mode
 - Smart prompt generation
 - Project metadata headers
+- ESM dependency updates (v2.0.1)
 
-### v3.0.0 (Planned)
-- Multi-language support (Python, Java, Go)
-- Custom compression rules
-- Import graph visualization
-- Plugin system
-- API integration
+### Future Development
+We're considering these features based on user feedback:
+- Additional framework detection (Astro, Qwik, SolidJS)
+- More export patterns (dynamic imports, re-exports)
+- Multi-language support (Python initially)
+- Enhanced compression strategies
+
+**Your feedback shapes our roadmap!**
 
 ---
 

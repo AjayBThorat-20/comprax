@@ -1,62 +1,44 @@
-import chalk from "chalk"
 import ora from "ora"
+import chalk from "chalk"
 
-let spinner
+let spinner = null
 
-/**
- * Start progress spinner
- */
 export function startSpinner(text) {
-  spinner = ora({
-    text: chalk.cyan(text),
-    color: "cyan"
-  }).start()
+  spinner = ora(text).start()
 }
 
-/**
- * Update spinner text
- */
-export function updateSpinner(text) {
-  if (spinner) {
-    spinner.text = chalk.cyan(text)
-  }
-}
-
-/**
- * Stop spinner with success
- */
 export function succeedSpinner(text) {
   if (spinner) {
-    spinner.succeed(chalk.green(text))
+    spinner.succeed(text)
+    spinner = null
   }
 }
 
-/**
- * Stop spinner with failure
- */
+export function updateSpinner(text) {
+  if (spinner) {
+    spinner.text = text
+  }
+}
+
 export function failSpinner(text) {
   if (spinner) {
-    spinner.fail(chalk.red(text))
+    spinner.fail(text)
+    spinner = null
   }
 }
 
-/**
- * Log info message
- */
 export function logInfo(message) {
-  console.log(chalk.blue("ℹ"), chalk.white(message))
+  console.log(chalk.blue(`ℹ ${message}`))
 }
 
-/**
- * Log warning message
- */
+export function logSuccess(message) {
+  console.log(chalk.green(`✔ ${message}`))
+}
+
 export function logWarning(message) {
-  console.log(chalk.yellow("⚠"), chalk.yellow(message))
+  console.log(chalk.yellow(`⚠ ${message}`))
 }
 
-/**
- * Log error message
- */
 export function logError(message) {
-  console.log(chalk.red("✖"), chalk.red(message))
+  console.log(chalk.red(`✖ ${message}`))
 }
