@@ -1,0 +1,65 @@
+# Development files
+examples/
+tests/
+docs/
+*.log
+
+# Test files
+test-project/
+test-with-comments/
+*.test.js
+*.spec.js
+
+# Build artifacts
+dist/
+build/
+*.tgz
+
+# Git files
+.git/
+.gitignore
+.github/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+.directory
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# npm files
+.npmrc
+.npmignore
+
+# Documentation (except README)
+MIGRATION.md
+CODE_OF_CONDUCT.md
+CHANGELOG.md
+
+# Output files
+comprax-output/
+*-compressed.txt
+devcompass-*.txt
+
+# Lock files (optional - include only package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
