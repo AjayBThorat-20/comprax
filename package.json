@@ -1,0 +1,60 @@
+{
+  "name": "comprax",
+  "version": "1.0.0",
+  "description": "Intelligent codebase compressor for LLM workflows - reduces token usage by 25-35% while preserving debugging context and code structure",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "comprax": "bin/comprax.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node tests/test-project-setup.js",
+    "dev": "node bin/comprax.js"
+  },
+  "keywords": [
+    "llm",
+    "compression",
+    "codebase",
+    "token-optimization",
+    "ai-tools",
+    "chatgpt",
+    "claude",
+    "code-analysis",
+    "developer-tools",
+    "cli",
+    "code-compression",
+    "llm-optimization",
+    "token-reduction",
+    "ai-context",
+    "code-minification",
+    "source-code-compression",
+    "artificial-intelligence",
+    "machine-learning",
+    "code-optimization"
+  ],
+  "author": "Ajay Thorat <ajaythorat988@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "ora": "^5.4.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AjayBThorat-20/comprax.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AjayBThorat-20/comprax/issues"
+  },
+  "homepage": "https://github.com/AjayBThorat-20/comprax#readme"
+}

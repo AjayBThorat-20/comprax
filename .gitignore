@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+test-project/
+comprax-output.txt
+dist/
