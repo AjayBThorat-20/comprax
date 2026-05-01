@@ -1,4 +1,3 @@
-cat > MIGRATION.md << 'EOF'
 # Migration Guide
 
 This guide helps you migrate between Comprax versions and integrate Comprax into your workflow.
