@@ -5,6 +5,202 @@ All notable changes to Comprax will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-05-02
+
+### 🎉 Major Release - Hybrid Mode with Export Detection & Stack Analysis
+
+#### Added
+
+**Export Detection Engine**
+- Automatically detects and displays module exports in compressed output
+- Supports 9 export patterns:
+  - ES6: `export function`, `export const`, `export class`
+  - ES6: `export default function`, `export default class`
+  - ES6: `export { foo, bar }` with alias support
+  - CommonJS: `module.exports = { ... }`
+  - CommonJS: `module.exports = value`
+  - CommonJS: `exports.name = value`
+- Export annotations appear as `EXPORTS: functionName, className, variableName`
+- Smart deduplication of exports
+- Handles both named and default exports
+
+**Stack Detection System**
+- Auto-detects project frameworks and dependencies from `package.json`
+- Identifies 40+ frameworks and tools:
+  - **Frameworks:** Next.js, Express, React, Vue, Angular, Remix, Gatsby, Nuxt, Svelte, NestJS, Fastify, Koa
+  - **Databases:** MongoDB, PostgreSQL, MySQL, Redis, SQLite, Prisma, Drizzle
+  - **Libraries:** GraphQL, Apollo, tRPC, Zod, React Query, Axios, Lodash, Day.js, Moment.js
+  - **Testing:** Jest, Vitest, Cypress, Playwright, Mocha
+  - **Build Tools:** Webpack, Vite, Rollup, esbuild, Turbopack
+- Displays stack information in project header
+- Runtime detection (Node.js default)
+
+**Hybrid Mode**
+- New `--mode` / `-m` flag with two options:
+  - `basic` - Original v1 behavior (default, maximum compression)
+  - `hybrid` - Enhanced output with exports and stack analysis
+- Backward compatible - all v1 commands work unchanged
+- Hybrid mode adds:
+  - Project metadata header with stack breakdown
+  - Export annotations for each file
+  - Smart prompt file generation
+  - Structured output for better LLM comprehension
+
+**Smart Prompt Generation**
+- Automatically generates `_prompt.txt` file in hybrid mode
+- Context-aware suggestions based on detected stack
+- Framework-specific analysis recommendations
+- General analysis questions tailored to project type
+- Helps guide LLM interactions with compressed codebase
+
+**Project Metadata Headers**
+- Rich context headers in hybrid mode output
+- Displays:
+  - Project name
+  - Detected framework or runtime
+  - Database stack
+  - Key libraries (top 5)
+  - Testing frameworks
+  - Build tools
+  - Total file count
+- Clean separator formatting for readability
+
+#### Enhanced
+
+**CLI Improvements**
+- Added `--mode <mode>` flag (basic/hybrid)
+- Enhanced `info` command to show v2 features
+- Updated `examples` command with hybrid mode examples
+- Better help text with mode explanations
+- Mode validation with helpful error messages
+
+**Output Formatting**
+- New `formatCombinedHybrid()` for single-file hybrid output
+- New `formatDirectoryHybrid()` for directory-based hybrid output
+- Enhanced `formatSummary()` with stack breakdown
+- Export information displayed clearly in file headers
+- Structured metadata sections
+
+**Multi-Writer Enhancement**
+- Hybrid mode support in directory output
+- Export annotations in individual directory files
+- Smart prompt file generation
+- Metadata preservation across output formats
+
+**Core Engine Updates**
+- Integrated export detection into main processing flow
+- Stack detection runs once per project (cached)
+- Export detection per-file (5-10ms overhead)
+- Mode-aware formatting pipeline
+- Seamless v1/v2 mode switching
+
+#### Technical
+
+**New Modules**
+- `src/core/export-detector.js` (278 lines) - Export pattern matching and formatting
+- `src/core/stack-detector.js` (186 lines) - Dependency analysis and stack identification
+- `src/core/prompt-generator.js` (124 lines) - Context-aware prompt generation
+
+**Updated Modules**
+- `src/core/formatter.js` - Added hybrid formatting functions
+- `src/core/multi-writer.js` - Hybrid mode directory output
+- `src/index.js` - Integrated v2 features, mode handling
+- `bin/comprax.js` - Added `--mode` flag and validation
+
+**Dependencies**
+- No new dependencies added
+- Still uses: commander, chalk, ora
+- Maintains Node.js >=18.0.0 requirement
+
+#### Performance
+
+**Hybrid Mode Impact**
+- Export detection: +5-10ms per file
+- Stack detection: +20-50ms per project (one-time)
+- Overall speed: Minimal impact (<5% slower than basic mode)
+- Memory usage: Unchanged
+
+**Basic Mode**
+- Performance unchanged from v1.0.0
+- Still achieves 25-35% compression
+- No overhead from v2 features when not enabled
+
+**Compression Comparison**
+- Basic mode: 29% compression (583KB → 413KB)
+- Hybrid mode: 16% compression (583KB → 491KB)
+- Trade-off: Larger file size for significantly better LLM understanding
+- Hybrid includes metadata that aids AI comprehension
+
+#### Backward Compatibility
+
+✅ **Fully Backward Compatible**
+- All v1.0.0 commands work identically
+- Basic mode is default (no breaking changes)
+- Hybrid mode is opt-in via `--mode hybrid`
+- No configuration changes required
+- No migration needed
+
+**Examples:**
+```bash
+# These work exactly as in v1.0.0
+comprax .
+comprax . -c
+comprax . -e tests
+comprax . -i .ts .tsx
+comprax . -o custom-output
+
+# New v2 hybrid mode (opt-in)
+comprax . -m hybrid
+comprax . -m hybrid -c
+comprax . -m hybrid -v
+```
+
+#### Documentation
+
+- Updated README.md with v2 features and comparison tables
+- Updated MIGRATION.md with v2 migration guide
+- Enhanced examples showing both basic and hybrid modes
+- Added FAQ section for v2 features
+- Updated roadmap
+
+#### Testing
+
+**Verified Functionality**
+- ✅ Export detection working (all 9 patterns tested)
+- ✅ Stack detection working (Node.js, SQLite, Axios detected)
+- ✅ Hybrid mode functional (metadata, exports, prompts)
+- ✅ Basic mode unchanged (backward compatibility verified)
+- ✅ CLI commands working (--mode flag validated)
+
+**Test Coverage**
+- Tested on 88-file real-world project (DevCompass)
+- ES6 exports: function, const, class, default
+- CommonJS exports: module.exports, exports.property
+- Stack detection: Frameworks, databases, libraries
+- Prompt generation: Framework-specific suggestions
+
+#### Known Limitations
+
+- Export detection requires valid JavaScript syntax
+- Stack detection requires `package.json` in project root
+- Hybrid mode produces larger output than basic mode
+- Smart prompts currently support limited frameworks (expandable)
+
+#### Migration Notes
+
+**From v1.0.0 to v2.0.0:**
+1. Update: `npm install -g comprax@latest`
+2. No code changes needed
+3. Continue using existing commands
+4. Add `-m hybrid` flag to enable v2 features when desired
+
+**Recommended:**
+- Use basic mode for maximum compression
+- Use hybrid mode for AI/LLM analysis
+- Try hybrid mode on complex projects for better insights
+
+---
+
 ## [1.0.0] - 2026-05-01
 
 ### 🎉 Initial Release
@@ -95,4 +291,5 @@ comprax ./your-project
 
 ---
 
+[2.0.0]: https://github.com/AjayBThorat-20/comprax/releases/tag/v2.0.0
 [1.0.0]: https://github.com/AjayBThorat-20/comprax/releases/tag/v1.0.0

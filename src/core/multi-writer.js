@@ -1,12 +1,9 @@
 import fs from "fs"
 import path from "path"
 import { getSafeFilename } from "./organizer.js"
+import { formatExports } from "./export-detector.js"
 
-/**
- * Write organized files to directory structure
- */
-export function writeOrganized(organized, outputBase, projectName, summaryContent) {
-  // Create output directory: comprax-output/projectName/
+export function writeOrganized(organized, outputBase, projectName, summaryContent, mode = 'basic') {
   const outputDir = path.join(outputBase, projectName)
   
   if (fs.existsSync(outputDir)) {
@@ -22,8 +19,10 @@ export function writeOrganized(organized, outputBase, projectName, summaryConten
     const filename = getSafeFilename(dir)
     const filepath = path.join(outputDir, filename)
     
-    // Format content
-    const content = formatDirectoryFile(files, dir)
+    // Format content based on mode
+    const content = mode === 'hybrid'
+      ? formatDirectoryFileHybrid(files, dir)
+      : formatDirectoryFile(files, dir)
     
     fs.writeFileSync(filepath, content, 'utf-8')
     filesWritten++
@@ -52,6 +51,35 @@ function formatDirectoryFile(files, dirName) {
   const sections = files.map(f => {
     const filename = path.basename(f.relativePath)
     return `## ${filename}\n${f.code}`
+  })
+  
+  return header + sections.join('\n\n')
+}
+
+function formatDirectoryFileHybrid(files, dirName) {
+  const header = [
+    '='.repeat(70),
+    `DIRECTORY: ${dirName}`,
+    `FILES: ${files.length}`,
+    '='.repeat(70),
+    ''
+  ].join('\n')
+  
+  const sections = files.map(f => {
+    const filename = path.basename(f.relativePath)
+    let section = `## ${filename}\n`
+    
+    // Add exports if available
+    if (f.exports && f.exports.length > 0) {
+      const exportStr = formatExports(f.exports)
+      if (exportStr) {
+        section += `EXPORTS: ${exportStr}\n`
+      }
+    }
+    
+    section += f.code
+    
+    return section
   })
   
   return header + sections.join('\n\n')

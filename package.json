@@ -1,7 +1,7 @@
 {
   "name": "comprax",
-  "version": "1.0.0",
-  "description": "Intelligent codebase compressor for LLM workflows - reduces token usage by 25-35% while preserving debugging context and code structure",
+  "version": "2.0.0",
+  "description": "Intelligent codebase compressor for LLM workflows - reduces token usage by 25-35% while preserving debugging context and code structure. Now with export detection and stack analysis.",
   "main": "src/index.js",
   "type": "module",
   "bin": {
@@ -11,12 +11,10 @@
     "bin/",
     "src/",
     "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "scripts": {
-    "test": "node tests/test-project-setup.js",
-    "dev": "node bin/comprax.js"
+    "test": "node tests/test-project-setup.js"
   },
   "keywords": [
     "llm",
@@ -29,15 +27,9 @@
     "code-analysis",
     "developer-tools",
     "cli",
-    "code-compression",
-    "llm-optimization",
-    "token-reduction",
-    "ai-context",
-    "code-minification",
-    "source-code-compression",
-    "artificial-intelligence",
-    "machine-learning",
-    "code-optimization"
+    "export-detection",
+    "stack-analysis",
+    "metadata"
   ],
   "author": "Ajay Thorat <ajaythorat988@gmail.com>",
   "license": "MIT",

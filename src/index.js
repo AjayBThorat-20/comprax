@@ -3,8 +3,15 @@ import path from "path"
 import { scanDir, resetScanner } from "./core/scanner.js"
 import { createFilter } from "./core/filter.js"
 import { compress, calculateCompressionRatio } from "./core/compressor.js"
+import { detectExports } from "./core/export-detector.js"
+import { detectStack } from "./core/stack-detector.js"
+import { generatePrompt } from "./core/prompt-generator.js"
 import { organizeByDirectory, createTreeStructure } from "./core/organizer.js"
-import { formatCombined, formatSummary } from "./core/formatter.js"
+import { 
+  formatCombined, 
+  formatCombinedHybrid,
+  formatSummary 
+} from "./core/formatter.js"
 import { writeOutput } from "./core/writer.js"
 import { writeOrganized } from "./core/multi-writer.js"
 import { printStats } from "./utils/stats-printer.js"
@@ -17,6 +24,7 @@ export async function run(projectPath, options = {}) {
   const { 
     output = "comprax-output",
     combined = false,
+    mode = "basic",
     verbose = false,
     exclude = [],
     include = []
@@ -25,7 +33,8 @@ export async function run(projectPath, options = {}) {
   // Show configuration
   if (verbose) {
     console.log(chalk.cyan("Configuration:"))
-    logInfo(`Mode: ${combined ? 'Combined (single file)' : 'Directory structure (multiple files)'}`)
+    logInfo(`Mode: ${mode === 'hybrid' ? 'Hybrid (with exports & stack)' : 'Basic'}`)
+    logInfo(`Output: ${combined ? 'Single file' : 'Directory structure'}`)
     if (exclude.length > 0) {
       logInfo(`Excluding dirs: ${exclude.join(", ")}`)
     }
@@ -65,7 +74,15 @@ export async function run(projectPath, options = {}) {
     return
   }
 
-  // Step 3: Compress
+  // Step 3: Detect stack (hybrid mode only)
+  let stack = null
+  if (mode === 'hybrid') {
+    startSpinner("Detecting project stack...")
+    stack = detectStack(absolutePath)
+    succeedSpinner(`Stack detected: ${stack.framework || stack.runtime}`)
+  }
+
+  // Step 4: Compress
   startSpinner("Compressing files...")
   
   const fileData = []
@@ -89,11 +106,18 @@ export async function run(projectPath, options = {}) {
 
       const compressed = compress(code)
 
-      fileData.push({
+      const data = {
         path: file,
         code: compressed,
         originalSize
-      })
+      }
+      
+      // Add exports for hybrid mode
+      if (mode === 'hybrid') {
+        data.exports = detectExports(code, file)
+      }
+
+      fileData.push(data)
 
       processedCount++
       
@@ -127,17 +151,29 @@ export async function run(projectPath, options = {}) {
     savedPercent
   }
 
-  // Step 4: Format and write
+  const projectName = path.basename(absolutePath)
+
+  // Step 5: Format and write
   if (combined) {
     // Single file mode
     startSpinner("Formatting output...")
-    const formattedOutput = formatCombined(fileData, absolutePath)
+    const formattedOutput = mode === 'hybrid'
+      ? formatCombinedHybrid(fileData, absolutePath, stack, projectName)
+      : formatCombined(fileData, absolutePath)
     succeedSpinner("Output formatted")
 
     const outputFile = output.endsWith('.txt') ? output : output + '.txt'
     startSpinner("Writing output file...")
     writeOutput(formattedOutput, outputFile)
     succeedSpinner(`Output written to: ${outputFile}`)
+    
+    // Generate prompt file for hybrid mode
+    if (mode === 'hybrid') {
+      const promptContent = generatePrompt(stack, fileData.length, projectName)
+      const promptFile = outputFile.replace('.txt', '-prompt.txt')
+      fs.writeFileSync(promptFile, promptContent, 'utf-8')
+      console.log(chalk.green(`📝 Generated prompt file: ${promptFile}`))
+    }
   } else {
     // Directory structure mode
     startSpinner("Organizing by directory...")
@@ -151,22 +187,37 @@ export async function run(projectPath, options = {}) {
     }
 
     startSpinner("Creating summary...")
-    const summaryContent = formatSummary(organized, stats)
+    const summaryContent = formatSummary(organized, stats, stack, projectName)
     succeedSpinner("Summary created")
 
     startSpinner("Writing files...")
-    const projectName = path.basename(absolutePath)
-    const result = writeOrganized(organized, output, projectName, summaryContent)
+    const result = writeOrganized(organized, output, projectName, summaryContent, mode)
     succeedSpinner(`Written to: ${result.mainDir}/ (${result.filesWritten} files)`)
+    
+    // Generate prompt file for hybrid mode
+    if (mode === 'hybrid') {
+      const promptContent = generatePrompt(stack, fileData.length, projectName)
+      const promptPath = path.join(output, projectName, '_prompt.txt')
+      fs.writeFileSync(promptPath, promptContent, 'utf-8')
+      console.log(chalk.green(`📝 Generated prompt file: ${path.relative(process.cwd(), promptPath)}`))
+    }
   }
 
-  // Step 5: Display statistics
+  // Step 6: Display statistics
   printStats(stats)
 
   // Show next steps based on mode
   if (!combined) {
     console.log(chalk.green("\n💡 Directory structure created!"))
-    console.log(chalk.white(`   Open ${output}/${path.basename(absolutePath)}/ to see organized files`))
+    console.log(chalk.white(`   Open ${output}/${projectName}/ to see organized files`))
     console.log(chalk.white(`   Start with _summary.txt for an overview\n`))
+  }
+  
+  if (mode === 'hybrid') {
+    console.log(chalk.cyan("✨ Hybrid mode features:"))
+    console.log(chalk.white("   ✅ Export detection enabled"))
+    console.log(chalk.white("   ✅ Stack analysis included"))
+    console.log(chalk.white("   ✅ Smart prompt generated"))
+    console.log()
   }
 }

@@ -4,6 +4,8 @@
 
 Compress your entire project into organized, LLM-optimized files while preserving debugging context and code structure. Reduce token usage by 25-35% without losing important information.
 
+**New in v2.0.0:** 🎉 Export detection, stack analysis, and hybrid mode for better LLM understanding!
+
 [![npm version](https://img.shields.io/npm/v/comprax.svg)](https://www.npmjs.com/package/comprax)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
@@ -12,33 +14,42 @@ Compress your entire project into organized, LLM-optimized files while preservin
 
 ## ✨ Features
 
+### Core Features (v1.0.0)
 - 🎯 **Smart Compression** - 25-35% token reduction while preserving context
 - 💬 **Comment Preservation** - Keeps TODO, FIXME, BUG, HACK, and debugging notes
 - 📁 **Directory Organization** - Automatically organizes by folder structure
 - 📄 **Combined Mode** - Option to create single unified file
 - 🎛️ **Flexible Filtering** - Exclude/include specific directories and extensions
 - 📊 **Detailed Analytics** - Token estimation and compression statistics
-- 🚀 **Production Tested** - Successfully handles 88+ file projects
 - ⚡ **Fast & Efficient** - Processes 50-100 files per second
+
+### New in v2.0.0 🎉
+- 🔍 **Export Detection** - Automatically identifies module exports (ES6 & CommonJS)
+- 📦 **Stack Analysis** - Auto-detects frameworks, databases, and libraries
+- 🤖 **Hybrid Mode** - Enhanced output with structural metadata for LLMs
+- 💡 **Smart Prompts** - Context-aware suggestions for AI analysis
+- 📊 **Project Metadata** - Rich headers with framework and stack information
 
 ---
 
 ## 📦 Installation
 
-### Global Installation (Recommended)
+### Using npx (No Installation Required)
+```bash
+npx comprax ./my-project
+```
 
+### Global Installation
 ```bash
 npm install -g comprax
 ```
 
-### Local Installation
-
+### With sudo (Linux/Mac)
 ```bash
-npm install --save-dev comprax
+sudo npm install -g comprax
 ```
 
 ### Verify Installation
-
 ```bash
 comprax --version
 ```
@@ -47,34 +58,104 @@ comprax --version
 
 ## 🚀 Quick Start
 
-### Basic Usage
-
+### Basic Mode (v1 - Fastest)
 ```bash
 # Compress entire project (creates directory structure)
 comprax ./my-project
 
-# Output:
-# comprax-output/
-# └── my-project/
-#     ├── _summary.txt
-#     ├── src_components.txt
-#     ├── src_utils.txt
-#     └── ...
-```
-
-### Single File Mode
-
-```bash
-# Create one combined file
+# Single file output
 comprax ./my-project -c -o project.txt
 ```
 
-### Compress Specific Directory
+### Hybrid Mode (v2 - Best for LLM Analysis) 🆕
+```bash
+# With export detection and stack analysis
+comprax ./my-project --mode hybrid
+
+# Hybrid mode + single file
+comprax ./my-project -m hybrid -c -o project.txt
+
+# Hybrid mode + verbose
+comprax ./my-project -m hybrid -v
+```
+
+---
+
+## ✨ v2.0.0: Hybrid Mode
+
+### What is Hybrid Mode?
+
+Hybrid mode adds **export detection** and **stack analysis** to help LLMs better understand your codebase structure.
+
+### Quick Example
 
 ```bash
-# Only compress src folder
-comprax ./my-project/src
+# Enable hybrid mode
+npx comprax . --mode hybrid
+
+# Or shorter
+npx comprax . -m hybrid
 ```
+
+### What You Get
+
+**1. Export Detection**
+```
+## src/auth.js
+EXPORTS: login, logout, verifyToken
+function login(username,password){...}
+```
+
+**2. Stack Analysis**
+```
+======================================================================
+PROJECT: my-app
+======================================================================
+Framework: Next.js
+Database: PostgreSQL, Redis
+Libraries: Prisma, tRPC, Zod
+Total Files: 45
+======================================================================
+```
+
+**3. Smart Prompts**
+
+A `_prompt.txt` file with context-aware suggestions:
+```
+## Suggested Analysis Tasks
+
+For Next.js projects:
+- Analyze the routing structure and page components
+- Review API routes and data fetching patterns
+- Check for proper use of Server/Client Components
+...
+```
+
+### Basic vs Hybrid Mode
+
+| Feature | Basic Mode | Hybrid Mode |
+|---------|------------|-------------|
+| Compression | ✅ 29% | ✅ 16% |
+| Comments preserved | ✅ | ✅ |
+| Export detection | ❌ | ✅ |
+| Stack analysis | ❌ | ✅ |
+| Smart prompts | ❌ | ✅ |
+| Speed | Fastest | Fast |
+| Token usage | Lower | Slightly higher |
+| LLM understanding | Good | Excellent |
+
+### When to Use Each Mode
+
+**Use Basic Mode when:**
+- You want fastest compression
+- Minimum token usage is critical
+- Simple codebase analysis
+
+**Use Hybrid Mode when:**
+- Analyzing architecture
+- Understanding module relationships
+- Getting better LLM insights
+- Working with complex codebases
 
 ---
 
@@ -88,161 +169,141 @@ Arguments:
 
 Options:
   -o, --output <path>     Output path (default: "comprax-output")
-  -c, --combined          Create single combined file instead of directory structure
-  -e, --exclude <dirs>    Additional directories to exclude (space-separated)
-  -i, --include <exts>    File extensions to include (space-separated)
-  -v, --verbose           Show detailed processing information
+  -c, --combined          Create single combined file
+  -m, --mode <mode>       Compression mode: basic or hybrid (default: basic)
+  -e, --exclude <dirs>    Additional directories to exclude
+  -i, --include <exts>    File extensions to include
+  --verbose               Show detailed processing information
   -h, --help              Display help information
-  -V, --version           Display version number
+  -v, --version           Display version number
+
+Commands:
+  info                    Display project information
+  examples                Show usage examples
+  stats [path]            Show compression statistics
 ```
 
 ---
 
 ## 📚 Examples
 
-### Exclude Directories
-
+### Basic Usage
 ```bash
-# Skip tests, docs, and temp folders
-comprax ./my-project -e tests docs temp
+# Compress current directory
+comprax .
+
+# Compress specific project
+comprax ./my-project
+
+# Single file output
+comprax ./src -c -o output.txt
 ```
 
-### Include Only Specific Extensions
-
+### Hybrid Mode (v2) 🆕
 ```bash
-# Process only TypeScript files
-comprax ./my-project -i .ts .tsx
+# With export detection & stack analysis
+comprax . -m hybrid
 
-# Process only JavaScript files
-comprax ./my-project -i .js .jsx .mjs
+# Hybrid mode, single file
+comprax . -m hybrid -c
+
+# Hybrid mode, verbose
+comprax . -m hybrid -v
 ```
 
-### Combine Multiple Options
-
+### Filtering
 ```bash
-# TypeScript only, exclude tests, single file, verbose
-comprax ./my-project -i .ts .tsx -e __tests__ -c -o typescript.txt -v
+# Exclude directories
+comprax . -e tests docs
+
+# Only TypeScript files
+comprax . -i .ts .tsx
+
+# Exclude tests from src
+comprax ./src -e __tests__
 ```
 
 ### Real-World Examples
-
 ```bash
-# Prepare for code review
-comprax ./src -e __tests__ -o review.txt -v
+# Prepare for AI analysis (hybrid mode)
+comprax . -m hybrid -c -o analysis.txt
 
-# Analyze with ChatGPT/Claude
-comprax . -c -o analysis.txt
+# Code review (basic mode, fast)
+comprax ./src -e __tests__ -c -o review.txt
+
+# TypeScript only with stack info
+comprax . -m hybrid -i .ts .tsx -o typescript-analysis.txt
 
 # Create timestamped snapshot
 comprax . -c -o snapshots/project-$(date +%Y%m%d).txt
-
-# Compress only backend code
-comprax ./server -i .js .ts -e node_modules
 ```
 
 ---
 
 ## 📊 Example Output
 
-### Directory Structure Mode (Default)
+### Hybrid Mode Output (v2)
 
+**Project Header:**
+```
+======================================================================
+PROJECT: my-app
+======================================================================
+Framework: Next.js
+Database: PostgreSQL
+Libraries: Prisma, React Query, Zod
+Total Files: 88
+======================================================================
+```
+
+**File with Exports:**
+```
+## src/api/auth.js
+EXPORTS: login, logout, refreshToken, verifyToken
+
+function login(credentials){
+// Login implementation
+}
+
+function logout(){
+// Logout implementation
+}
+```
+
+**Smart Prompt File** (`_prompt.txt`):
+```
+# my-app - Compressed Codebase
+
+I've compressed this codebase for your analysis.
+
+## Project Context
+
+- **Framework:** Next.js
+- **Database:** PostgreSQL
+- **Key Libraries:** Prisma, React Query, Zod
+- **Total Files:** 88
+
+## Suggested Analysis Tasks
+
+**For Next.js projects:**
+- Analyze the routing structure and page components
+- Review API routes and data fetching patterns
+- Check for proper use of Server/Client Components
+- Identify performance optimization opportunities
+
+...
+```
+
+### Directory Structure Mode
 ```
 comprax-output/
 └── my-project/
-    ├── _summary.txt           (Project overview and statistics)
-    ├── bin.txt                (Files from bin/ directory)
-    ├── src_components.txt     (Files from src/components/)
-    ├── src_utils.txt          (Files from src/utils/)
-    ├── src_api.txt            (Files from src/api/)
+    ├── _summary.txt           (Project overview)
+    ├── _prompt.txt            (Smart prompts - hybrid mode)
+    ├── bin.txt
+    ├── src_components.txt
+    ├── src_utils.txt
     └── ...
-```
-
-**Summary File Example:**
-```
-======================================================================
-COMPRAX COMPRESSION SUMMARY
-======================================================================
-
-Generated: 2026-05-01T14:15:32.016Z
-Total Files: 88
-Total Directories: 14
-Original Size: 583.6 KB
-Compressed Size: 412.9 KB
-Reduction: 29%
-
-======================================================================
-DIRECTORY BREAKDOWN
-======================================================================
-
-📁 src/components
-   Files: 15
-   Size: 85.2 KB
-
-📁 src/utils
-   Files: 12
-   Size: 42.1 KB
-   
-...
-```
-
-### Combined Mode Output
-
-```
-## src/auth.js
-// User authentication module
-// TODO: Add rate limiting
-function login(username,password){
-if(!username||!password){
-throw new Error("Missing credentials")
-}
-...
-}
-
-## src/utils/helpers.js
-// Helper functions
-function formatDate(date){
-return date.toISOString()
-}
-...
-```
-
----
-
-## 🎯 Use Cases
-
-### 1. **LLM Context Preparation**
-Prepare entire codebases for ChatGPT, Claude, or other LLMs:
-```bash
-comprax ./my-app -v
-# Upload comprax-output/ files to LLM
-# Ask: "Explain the architecture of this project"
-```
-
-### 2. **Code Reviews**
-Share compressed codebase for review:
-```bash
-comprax ./src -e __tests__ -c -o review.txt
-# Share review.txt with team
-```
-
-### 3. **Documentation**
-Generate organized code snapshots:
-```bash
-comprax . -c -o docs/codebase-$(date +%Y%m%d).txt
-```
-
-### 4. **Architecture Analysis**
-Analyze system design with AI:
-```bash
-comprax . -v
-# Upload to Claude: "Analyze the architecture and suggest improvements"
-```
-
-### 5. **Bug Investigation**
-Focus AI on specific modules:
-```bash
-comprax ./src/problematic-module -c -o debug.txt
-# Upload to ChatGPT: "Find potential bugs in this code"
 ```
 
 ---
@@ -251,22 +312,62 @@ comprax ./src/problematic-module -c -o debug.txt
 
 ### Real-World Testing
 
-**Project:** DevCompass (npm dependency analyzer)
-- **Files:** 88 JavaScript files
-- **Original Size:** 583.6 KB
-- **Compressed Size:** 412.9 KB
-- **Reduction:** 29% (170 KB saved)
+**Basic Mode:**
+- **Compression:** 29%
+- **Original:** 583.6 KB → **Compressed:** 412.9 KB
 - **Token Savings:** ~42,000 tokens
-- **Comments:** All preserved (TODO, FIXME, BUG)
-- **Processing Time:** <2 seconds
 
-### Compression Statistics
+**Hybrid Mode:**
+- **Compression:** 16%
+- **Original:** 583.6 KB → **Compressed:** 490.9 KB
+- **Token Savings:** ~23,739 tokens
+- **Extra Features:** Export detection ✅, Stack analysis ✅, Smart prompts ✅
 
-| Project Size | Avg. Compression | Token Savings |
-|--------------|------------------|---------------|
-| Small (10-20 files) | 15-25% | 5,000-15,000 |
-| Medium (50-100 files) | 25-35% | 30,000-60,000 |
-| Large (200+ files) | 30-40% | 80,000-150,000 |
+### Why Hybrid Has Lower Compression
+
+Hybrid mode includes additional metadata:
+- Export annotations
+- Project stack information
+- Structured headers
+- Enhanced formatting
+
+**Trade-off:** Slightly larger file size, but significantly better LLM comprehension!
+
+---
+
+## 🎯 Use Cases
+
+### 1. AI-Powered Architecture Analysis
+```bash
+comprax . -m hybrid -c -o architecture.txt
+# Upload to Claude/ChatGPT
+# Ask: "Analyze the architecture and suggest improvements"
+```
+
+### 2. Understanding Module Dependencies
+```bash
+comprax . -m hybrid
+# Hybrid mode shows all exports
+# Ask AI: "Explain the relationships between these modules"
+```
+
+### 3. Code Reviews with Context
+```bash
+comprax ./src -m hybrid -e __tests__ -c -o review.txt
+# Share with team + AI assistant
+```
+
+### 4. Documentation Generation
+```bash
+comprax . -m hybrid -c -o docs/codebase-snapshot.txt
+# AI can generate docs with full context
+```
+
+### 5. Bug Investigation
+```bash
+comprax ./problematic-module -m hybrid -c -o debug.txt
+# Upload to AI: "Find potential bugs and explain the data flow"
+```
 
 ---
 
@@ -275,16 +376,15 @@ comprax ./src/problematic-module -c -o debug.txt
 ### ✅ Removed (Safe)
 - Empty lines
 - Excessive whitespace
-- Auto-generated comments (eslint-disable, prettier-ignore, etc.)
-- Redundant comments ("End of file", "Constructor", etc.)
+- Auto-generated comments (eslint-disable, prettier-ignore)
+- Redundant comments
 
 ### ✅ Preserved (Important)
 - All code logic and structure
 - TODO, FIXME, BUG, HACK comments
-- Important warnings and notes
 - Function documentation
 - Debugging context
-- Security notes
+- **NEW:** Export declarations (hybrid mode)
 
 ### 📁 Default Exclusions
 - `node_modules/`
@@ -292,32 +392,21 @@ comprax ./src/problematic-module -c -o debug.txt
 - `dist/`, `build/`
 - `.next/`, `.cache/`
 - `coverage/`
-- Binary files
-- Lock files
 
 ---
 
 ## 🔧 Integration
 
 ### npm Scripts
-
-Add to your `package.json`:
-
 ```json
 {
   "scripts": {
     "compress": "comprax .",
-    "compress:src": "comprax ./src -e __tests__",
-    "compress:single": "comprax . -c -o project.txt",
-    "compress:review": "comprax ./src -c -o review.txt -v"
+    "compress:hybrid": "comprax . -m hybrid",
+    "compress:analysis": "comprax . -m hybrid -c -o analysis.txt",
+    "compress:review": "comprax ./src -e __tests__ -c -o review.txt"
   }
 }
-```
-
-Usage:
-```bash
-npm run compress
-npm run compress:review
 ```
 
 ### CI/CD Integration
@@ -326,14 +415,14 @@ npm run compress:review
 ```yaml
 name: Compress Codebase
 on: [push]
+
 jobs:
   compress:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
-      - run: npm install -g comprax
-      - run: comprax . -c -o compressed.txt
+      - run: npx comprax . -m hybrid -c -o compressed.txt
       - uses: actions/upload-artifact@v3
         with:
           name: compressed-codebase
@@ -344,77 +433,46 @@ jobs:
 
 ## ❓ FAQ
 
-### Q: Will this break my code?
-**A:** No! Comprax only removes whitespace and comments. Your code logic remains 100% intact and functional.
+### Q: What's the difference between basic and hybrid mode?
+**A:** Basic mode focuses on maximum compression. Hybrid mode adds export detection, stack analysis, and better structure for LLM understanding at the cost of slightly lower compression.
 
-### Q: What about comments? Don't I need them?
-**A:** Yes! Comprax preserves all important comments (TODO, FIXME, BUG, HACK, IMPORTANT, etc.) while removing only redundant ones.
+### Q: Should I always use hybrid mode?
+**A:** Use hybrid mode when working with AI for architecture analysis, documentation, or understanding complex codebases. Use basic mode for simple compression or when token limits are critical.
 
-### Q: How much space will I save?
-**A:** Typically 25-35% compression. A 500KB project becomes ~350KB.
+### Q: Will hybrid mode work with my framework?
+**A:** Yes! Hybrid mode auto-detects 40+ frameworks and tools including Next.js, Express, React, Vue, Angular, Prisma, PostgreSQL, MongoDB, and more.
 
-### Q: Can I use this with ChatGPT/Claude?
-**A:** Absolutely! That's the primary use case. Upload the compressed files to get better results within token limits.
+### Q: Does it support CommonJS and ES6 modules?
+**A:** Yes! Export detection works with both:
+- ES6: `export function`, `export const`, `export default`
+- CommonJS: `module.exports`, `exports.name`
 
-### Q: Does it work with TypeScript?
-**A:** Yes! Supports `.js`, `.ts`, `.jsx`, `.tsx`, `.mjs`, `.cjs`
-
-### Q: What about large projects?
-**A:** Comprax handles large projects well. Files >5MB are automatically skipped with warnings.
-
-### Q: Is my code secure?
-**A:** Comprax runs locally. Nothing is uploaded or shared. Your code stays on your machine.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Development Setup
-
-```bash
-# Clone repo
-git clone https://github.com/AjayBThorat-20/comprax.git
-cd comprax
-
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Test locally
-node bin/comprax.js ./test-project
-```
-
-### Reporting Issues
-
-Found a bug? Have a feature request? 
-[Open an issue](https://github.com/AjayBThorat-20/comprax/issues)
+### Q: Is v2 backward compatible with v1?
+**A:** Completely! All v1 commands work exactly the same. Hybrid mode is opt-in with `--mode hybrid`.
 
 ---
 
 ## 🗺️ Roadmap
 
-### v1.0.0 (Current) ✅
+### v1.0.0 ✅
 - Smart compression
 - Directory organization
 - Comment preservation
 - Flexible filtering
 
-### v2.0.0 (Planned)
-- Export detection
-- Stack detection (framework identification)
+### v2.0.0 ✅ (Current)
+- Export detection (9 patterns)
+- Stack detection (40+ frameworks/tools)
+- Hybrid mode
+- Smart prompt generation
 - Project metadata headers
-- Compression level options
-- Incremental compression
 
-### v3.0.0 (Future)
+### v3.0.0 (Planned)
 - Multi-language support (Python, Java, Go)
 - Custom compression rules
-- API integration
+- Import graph visualization
 - Plugin system
+- API integration
 
 ---
 
@@ -441,6 +499,7 @@ If Comprax helps you, please:
 - 📢 Share it with your team
 - 🐛 Report bugs
 - 💡 Suggest features
+- 💬 Share your use cases
 
 ---
 
@@ -448,4 +507,4 @@ If Comprax helps you, please:
 
 ---
 
-*Last updated: May 2026*
+*Updated for v2.0.0 - May 2026*

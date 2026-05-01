@@ -10,7 +10,6 @@ import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Read package.json for version
 const packageJson = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')
 )
@@ -24,6 +23,7 @@ program
   .argument("<path>", "path to project directory or specific subdirectory")
   .option("-o, --output <path>", "output path (directory for split mode, file for combined)", "comprax-output")
   .option("-c, --combined", "create single combined file instead of directory structure", false)
+  .option("-m, --mode <mode>", "compression mode: basic or hybrid (default: basic)", "basic")
   .option("--verbose", "show detailed processing info", false)
   .option("-e, --exclude <dirs...>", "additional directories to exclude (space-separated)")
   .option("-i, --include <exts...>", "file extensions to include (space-separated)")
@@ -34,17 +34,33 @@ Examples:
   $ comprax .                           Compress current directory
   $ comprax ./my-project                Compress specific project
   $ comprax ./src -c -o output.txt      Single file output
+  $ comprax . -m hybrid                 Hybrid mode with exports & stack detection
+  $ comprax . -m hybrid -c              Hybrid mode, single file
   $ comprax . -e tests docs             Exclude directories
   $ comprax . -i .ts .tsx               Only TypeScript files
   $ comprax . --verbose                 Show detailed progress
+
+Modes:
+  basic   - Simple compression (default)
+  hybrid  - With export detection & stack analysis (v2)
 
 Documentation:
   GitHub: https://github.com/AjayBThorat-20/comprax
   Issues: https://github.com/AjayBThorat-20/comprax/issues
   `)
   .action(async (projectPath, options) => {
+    // Validate mode
+    if (options.mode && !['basic', 'hybrid'].includes(options.mode)) {
+      console.error(chalk.red(`\n❌ Invalid mode: ${options.mode}`))
+      console.log(chalk.yellow('Valid modes: basic, hybrid\n'))
+      process.exit(1)
+    }
+
     try {
       console.log(chalk.cyan.bold("\n🚀 Comprax v" + packageJson.version + "\n"))
+      if (options.mode === 'hybrid') {
+        console.log(chalk.blue("📊 Mode: Hybrid (with export detection & stack analysis)\n"))
+      }
       await run(projectPath, options)
     } catch (err) {
       console.error(chalk.red.bold("\n❌ Error:"), err.message)
@@ -55,7 +71,7 @@ Documentation:
     }
   })
 
-// Add info command
+// Info command
 program
   .command('info')
   .description('Display project information and statistics')
@@ -65,11 +81,16 @@ program
     console.log(chalk.white('Description:'), packageJson.description)
     console.log(chalk.white('Author:'), packageJson.author)
     console.log(chalk.white('License:'), packageJson.license)
-    console.log(chalk.white('Repository:'), packageJson.repository?.url || 'N/A')
+    console.log()
+    console.log(chalk.yellow('New in v2.0.0:'))
+    console.log('  ✨ Export detection')
+    console.log('  ✨ Stack analysis')
+    console.log('  ✨ Hybrid mode')
+    console.log('  ✨ Smart prompt generation')
     console.log()
   })
 
-// Add examples command
+// Examples command
 program
   .command('examples')
   .description('Show usage examples')
@@ -79,6 +100,12 @@ program
     console.log(chalk.yellow('Basic Usage:'))
     console.log('  comprax .                     # Compress current directory')
     console.log('  comprax ./my-project          # Compress specific project')
+    console.log()
+    
+    console.log(chalk.yellow('Hybrid Mode (v2):'))
+    console.log('  comprax . -m hybrid           # With export detection & stack analysis')
+    console.log('  comprax . -m hybrid -c        # Hybrid mode, single file')
+    console.log('  comprax . -m hybrid -v        # Hybrid mode, verbose')
     console.log()
     
     console.log(chalk.yellow('Output Modes:'))
@@ -92,15 +119,9 @@ program
     console.log('  comprax . -i .ts .tsx         # Only TypeScript')
     console.log('  comprax ./src -e __tests__    # Exclude tests from src')
     console.log()
-    
-    console.log(chalk.yellow('Advanced:'))
-    console.log('  comprax . --verbose           # Show detailed progress')
-    console.log('  comprax . -e node_modules dist build')
-    console.log('  comprax ./src -i .js .jsx -c -o review.txt')
-    console.log()
   })
 
-// Add stats command (for existing output)
+// Stats command
 program
   .command('stats [path]')
   .description('Show statistics for compressed output')
@@ -115,7 +136,6 @@ program
       const stats = fs.statSync(outputPath)
       
       if (stats.isDirectory()) {
-        // Count files in directory
         const files = fs.readdirSync(outputPath, { recursive: true })
           .filter(f => {
             const fullPath = path.join(outputPath, f)
@@ -151,5 +171,4 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
-// Parse arguments
 program.parse()
