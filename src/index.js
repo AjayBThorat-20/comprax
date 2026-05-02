@@ -3,7 +3,7 @@ import path from "path"
 import { scanDir, resetScanner } from "./core/scanner.js"
 import { createFilter } from "./core/filter.js"
 import { compress, calculateCompressionRatio } from "./core/compressor.js"
-import { detectExports } from "./core/export-detector.js"
+import { detectExports, formatExports } from "./core/export-detector.js"
 import { detectStack } from "./core/stack-detector.js"
 import { generatePrompt } from "./core/prompt-generator.js"
 import { organizeByDirectory, createTreeStructure } from "./core/organizer.js"
@@ -21,6 +21,7 @@ import { extractStructure } from "./core/semantic/extractor.js"
 import { summarizeStructure } from "./core/semantic/summarizer.js"
 import { scoreStructure, shouldIncludeFile } from "./core/semantic/scorer.js"
 import { loadCache, saveCache, hasFileChanged, getCachedData, setCachedData } from "./core/cache/hash.js"
+import { estimateTokens } from "./utils/token-estimator.js"
 import chalk from "chalk"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -104,18 +105,31 @@ export async function run(projectPath, options = {}) {
       const originalSize = code.length
       totalOriginalSize += originalSize
 
+      // Handle large files with placeholder
       if (originalSize > MAX_FILE_SIZE) {
-        if (verbose) logWarning(`Skipping large file: ${path.relative(absolutePath, file)}`)
+        fileData.push({
+          path: file,
+          code: `// [FILE TOO LARGE: ${(originalSize / 1024 / 1024).toFixed(1)}MB - SKIPPED]\n`,
+          originalSize,
+          exports: null,
+          structure: null,
+          summary: null,
+          score: 0,
+          skipped: true,
+          skipReason: 'too_large'
+        })
         skippedFiles++
+        if (verbose) logWarning(`Skipped large file: ${path.relative(absolutePath, file)}`)
         continue
       }
 
+      // Check incremental cache
       if (incremental && !hasFileChanged(file, code, cache)) {
-        const cachedData = getCachedData(file, cache);
+        const cachedData = getCachedData(file, cache)
         if (cachedData && cachedData.data) {
-          fileData.push(cachedData.data);
-          cachedFiles++;
-          continue;
+          fileData.push(cachedData.data)
+          cachedFiles++
+          continue
         }
       }
 
@@ -147,14 +161,19 @@ export async function run(projectPath, options = {}) {
             data.summary = summarizeStructure(data.structure)
           }
 
-          // CRITICAL FIX: Convert exports array to string
+          // CRITICAL FIX: Consistent export formatting through same pipeline
           if (data.structure.exports && data.structure.exports.length > 0) {
-            data.exports = data.structure.exports.join(", ")
+            // Convert string array to object array, then format
+            data.exports = formatExports(
+              data.structure.exports.map(name => ({ name, type: 'ast' }))
+            )
           } else {
-            data.exports = detectExports(code, file)
+            const detectedExports = detectExports(code, file)
+            data.exports = formatExports(detectedExports)
           }
         } else {
-          data.exports = detectExports(code, file)
+          const detectedExports = detectExports(code, file)
+          data.exports = formatExports(detectedExports)
         }
       }
 
@@ -170,15 +189,23 @@ export async function run(projectPath, options = {}) {
         updateSpinner(`Compressing files... (${processedCount}/${filtered.length})`)
       }
     } catch (err) {
-      if (verbose) logWarning(`Could not read: ${path.relative(absolutePath, file)}`)
+      if (verbose) {
+        logWarning(`Failed: ${path.relative(absolutePath, file)}`)
+        console.error(err.message)
+      }
       skippedFiles++
       continue
     }
   }
 
-  if (smart || top) {
-    fileData.sort((a, b) => (b.score || 0) - (a.score || 0))
-  }
+  // Deterministic sorting before filtering
+  fileData.sort((a, b) => {
+    // Sort by score desc, then by path
+    if ((b.score || 0) !== (a.score || 0)) {
+      return (b.score || 0) - (a.score || 0)
+    }
+    return a.path.localeCompare(b.path)
+  })
 
   if (top && fileData.length > top) {
     fileData.splice(top)
@@ -198,8 +225,8 @@ export async function run(projectPath, options = {}) {
     throw new Error("No files could be processed")
   }
 
+  // CRITICAL FIX: Always measure actual code size
   const compressedSize = fileData.reduce((sum, f) => {
-    if (semantic && f.summary) return sum + f.summary.length
     return sum + (f.code?.length || 0)
   }, 0)
 

@@ -1,0 +1,116 @@
+======================================================================
+PROJECT: comprax
+======================================================================
+Runtime: Node.js
+Total Files: 3
+======================================================================
+
+## src/utils/logger.js
+EXPORTS: startSpinner, succeedSpinner, updateSpinner, failSpinner, logInfo, logSuccess, logWarning, logError
+
+SUMMARY:
+Exports: startSpinner, succeedSpinner, updateSpinner, failSpinner, logInfo, logSuccess, logWarning, logError
+
+Functions:
+  startSpinner(text)
+  succeedSpinner(text)
+  updateSpinner(text)
+  failSpinner(text)
+  logInfo(message)
+  logSuccess(message)
+  logWarning(message)
+  logError(message)
+
+Imports: 2 modules
+
+import ora from "ora"
+import chalk from "chalk"
+let spinner = null
+export function startSpinner(text){spinner = ora(text).start()}export function succeedSpinner(text){if(spinner){spinner.succeed(text)spinner = null}}export function updateSpinner(text){if(spinner){spinner.text = text}}export function failSpinner(text){if(spinner){spinner.fail(text)spinner = null}}export function logInfo(message){console.log(chalk.blue(`ℹ ${message}`))}export function logSuccess(message){console.log(chalk.green(`✔ ${message}`))}export function logWarning(message){console.log(chalk.yellow(`⚠ ${message}`))}export function logError(message){console.log(chalk.red(`✖ ${message}`))}
+
+## src/core/cache/hash.js
+EXPORTS: hashContent, loadCache, saveCache, getCachedData, setCachedData, hasFileChanged
+
+SUMMARY:
+Exports: hashContent, loadCache, saveCache, getCachedData, setCachedData, hasFileChanged
+
+Functions:
+  hashContent(content)
+  loadCache(cacheDir)
+  saveCache(cacheDir, cache)
+  getCachedData(filepath, cache)
+  setCachedData(filepath, content, processedData, cache)
+  hasFileChanged(filepath, content, cache)
+
+Imports: 3 modules
+
+import crypto from "crypto";import fs from "fs";import path from "path";export function hashContent(content){return crypto.createHash("md5").update(content).digest("hex");}export function loadCache(cacheDir){const cacheFile = path.join(cacheDir,"file-cache.json");if(!fs.existsSync(cacheFile)){return{};}try{return JSON.parse(fs.readFileSync(cacheFile,"utf-8"));}catch{return{};}}export function saveCache(cacheDir,cache){if(!fs.existsSync(cacheDir)){fs.mkdirSync(cacheDir,{recursive:true});}const cacheFile = path.join(cacheDir,"file-cache.json");fs.writeFileSync(cacheFile,JSON.stringify(cache,null,2));}export function getCachedData(filepath,cache){return cache[filepath] || null;}export function setCachedData(filepath,content,processedData,cache){cache[filepath] ={hash:hashContent(content),data:processedData};}export function hasFileChanged(filepath,content,cache){const cached = cache[filepath];if(!cached)return true;const currentHash = hashContent(content);return cached.hash !== currentHash;}
+
+## src/core/formatter.js
+EXPORTS: formatCombined, formatCombinedHybrid, formatDirectory, formatDirectoryHybrid, formatSummary
+
+SUMMARY:
+Exports: formatCombined, formatCombinedHybrid, formatDirectory, formatDirectoryHybrid, formatSummary
+
+Functions:
+  formatCombined(fileData, basePath)
+  formatCombinedHybrid(fileData, basePath, stack, projectName, semantic)
+  formatDirectory(files, dirName)
+  formatDirectoryHybrid(files, dirName, semantic)
+  formatSummary(organized, stats, stack, projectName)
+
+Imports: 1 module
+
+import path from "path"
+export function formatCombined(fileData,basePath){const projectName = path.basename(basePath)let output = ""
+ 
+ output += "=".repeat(70)+ "\n"
+ output += `PROJECT:${projectName}\n`
+ output += "=".repeat(70)+ "\n\n"
+ for(const file of fileData){const relativePath = path.relative(basePath,file.path)output += `## ${relativePath}\n`
+ output += file.code.trim()+ "\n\n"}return output}export function formatCombinedHybrid(fileData,basePath,stack,projectName,semantic = false){let output = ""
+ 
+ output += "=".repeat(70)+ "\n"
+ output += `PROJECT:${projectName}\n`
+ output += "=".repeat(70)+ "\n"
+ 
+ if(stack){if(stack.framework){output += `Framework:${stack.framework}\n`}else{output += `Runtime:${stack.runtime}\n`}if(stack.database.length > 0){output += `Database:${stack.database.join(",")}\n`}if(stack.libraries.length > 0){output += `Libraries:${stack.libraries.slice(0,5).join(",")}\n`}}output += `Total Files:${fileData.length}\n`
+ output += "=".repeat(70)+ "\n\n"
+ for(const file of fileData){const relativePath = path.relative(basePath,file.path)output += `## ${relativePath}\n`
+ 
+ if(file.exports){output += `EXPORTS:${file.exports}\n`}// CRITICAL FIX:Always include code,optionally add summary first
+ if(semantic && file.summary){output += `\nSUMMARY:\n${file.summary}\n\n`}output += file.code.trim()+ "\n\n"}return output}export function formatDirectory(files,dirName){let output = ""
+ 
+ for(const file of files){const fileName = path.basename(file.path)output += `## ${fileName}\n`
+ output += file.code.trim()+ "\n\n"}return output}export function formatDirectoryHybrid(files,dirName,semantic = false){let output = ""
+ 
+ for(const file of files){const fileName = path.basename(file.path)output += `## ${fileName}\n`
+ 
+ if(file.exports){output += `EXPORTS:${file.exports}\n`}// CRITICAL FIX:Always include code,optionally add summary first
+ if(semantic && file.summary){output += `\nSUMMARY:\n${file.summary}\n\n`}output += file.code.trim()+ "\n\n"}return output}export function formatSummary(organized,stats,stack,projectName){let output = ""
+ 
+ output += "=".repeat(70)+ "\n"
+ output += "COMPRAX COMPRESSION SUMMARY\n"
+ output += "=".repeat(70)+ "\n\n"
+ 
+ output += `Project:${projectName}\n`
+ output += `Generated:${new Date().toISOString()}\n`
+ output += `Total Files:${stats.totalFiles}\n`
+ output += `Total Directories:${organized.size}\n`
+ 
+ const originalKB =(stats.originalSize / 1024).toFixed(1)const compressedKB =(stats.compressedSize / 1024).toFixed(1)output += `Original Size:${originalKB}KB\n`
+ output += `Compressed Size:${compressedKB}KB\n`
+ output += `Reduction:${stats.savedPercent}%\n\n`
+ 
+ if(stack){output += "=".repeat(70)+ "\n"
+ output += "PROJECT STACK\n"
+ output += "=".repeat(70)+ "\n"
+ 
+ if(stack.framework){output += `Framework:${stack.framework}\n`}else{output += `Runtime:${stack.runtime}\n`}if(stack.database.length > 0){output += `Database:${stack.database.join(",")}\n`}if(stack.libraries.length > 0){output += `Libraries:${stack.libraries.join(",")}\n`}output += "\n"}output += "=".repeat(70)+ "\n"
+ output += "DIRECTORY BREAKDOWN\n"
+ output += "=".repeat(70)+ "\n\n"
+ 
+ for(const [dirName,files] of organized){const dirSize = files.reduce((sum,f)=> sum +(f.compressedSize || f.code.length),0)const sizeKB =(dirSize / 1024).toFixed(1)output += `📁 ${dirName}\n`
+ output += ` Files:${files.length}\n`
+ output += ` Size:${sizeKB}KB\n\n`}return output}
+

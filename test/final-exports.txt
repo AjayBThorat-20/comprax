@@ -1,0 +1,186 @@
+======================================================================
+PROJECT: devCampuss
+======================================================================
+Runtime: Node.js
+Database: SQLite
+Libraries: Axios
+Total Files: 10
+======================================================================
+
+## src/dashboard/scripts/controls.js
+EXPORTS: initZoom, zoomIn, zoomOut, resetZoom, resetView, centerGraph, fitToScreen, toggleLabels, toggleLinks, toggleDepthCircles, handleSearch, handleDepthChange, applyFilters, getFilteredNodes, exportPNG, exportJSON, exportReport, toggleFullscreen, toggleTheme, initTheme, initKeyboardShortcuts, currentFilters
+
+SUMMARY:
+Exports: initZoom, zoomIn, zoomOut, resetZoom, resetView, centerGraph, fitToScreen, toggleLabels, toggleLinks, toggleDepthCircles, handleSearch, handleDepthChange, applyFilters, getFilteredNodes, exportPNG, exportJSON, exportReport, toggleFullscreen, toggleTheme, initTheme, initKeyboardShortcuts, currentFilters
+
+Functions:
+  initZoom(svg, g)
+  updateZoomDisplay(scale)
+  zoomIn()
+  zoomOut()
+  resetZoom()
+  resetView()
+  centerGraph()
+  fitToScreen()
+  toggleLabels()
+  toggleLinks()
+  ... 12 more
+
+## src/dashboard/scripts/utils.js
+EXPORTS: getHealthColor, getNodeRadius, getNodeStroke, buildHierarchy, formatNumber, truncateText, debounce, deepClone, nodeMatchesFilters, calculateStats, exportAsJSON, getContrastColor, storage
+
+SUMMARY:
+Exports: getHealthColor, getNodeRadius, getNodeStroke, buildHierarchy, formatNumber, truncateText, debounce, deepClone, nodeMatchesFilters, calculateStats, exportAsJSON, getContrastColor, storage
+
+Functions:
+  getHealthColor(node)
+  getNodeRadius(node)
+  getNodeStroke(node)
+  buildHierarchy(nodes, links)
+  formatNumber(num)
+  truncateText(text, maxLength)
+  debounce(func, wait)
+  later()
+  deepClone(obj)
+  nodeMatchesFilters(node, filters)
+  ... 3 more
+
+## src/commands/llm.js
+EXPORTS: addProvider, listProviders, setDefaultProvider, updateProvider, removeProvider, toggleProvider, testProvider, showStats, showHelp
+
+SUMMARY:
+Exports: addProvider, listProviders, setDefaultProvider, updateProvider, removeProvider, toggleProvider, testProvider, showStats, showHelp
+
+Functions:
+  addProvider(options)
+  listProviders()
+  setDefaultProvider(provider)
+  updateProvider(provider, options)
+  removeProvider(provider)
+  toggleProvider(provider, enabled)
+  testProvider(provider)
+  showStats(options)
+  showHelp()
+
+Imports: 4 modules
+
+## src/services/dynamic-license.js
+EXPORTS: analyzePackage, analyzeBatch, getLicenseConflicts, getLicenseRisk, isCommercialCompatible, LICENSE_RISKS, GPL_ALTERNATIVES
+
+SUMMARY:
+Exports: analyzePackage, analyzeBatch, getLicenseConflicts, getLicenseRisk, isCommercialCompatible, LICENSE_RISKS, GPL_ALTERNATIVES
+
+Functions:
+  analyzePackage(packageName, version)
+  analyzeBatch(packages)
+  getLicenseConflicts(analyses, projectLicense)
+  getLicenseRisk(license)
+  isCommercialCompatible(license)
+  normalizeLicense(license)
+
+Imports: 3 modules
+
+## src/services/dynamic-security.js
+EXPORTS: checkTyposquatting, checkInstallScripts, runNpmAudit, analyzeProject, parseAuditData, POPULAR_PACKAGES, WHITELIST
+
+SUMMARY:
+Exports: checkTyposquatting, checkInstallScripts, runNpmAudit, analyzeProject, parseAuditData, POPULAR_PACKAGES, WHITELIST
+
+Functions:
+  checkTyposquatting(packageName)
+  checkInstallScripts(packageJsonPath)
+  runNpmAudit(projectPath)
+  parseAuditData(auditData)
+  analyzeProject(projectPath)
+  levenshteinDistance(str1, str2)
+
+Imports: 3 modules
+
+## src/commands/ai.js
+EXPORTS: askQuestion, getRecommendations, getAlternatives, startChat, showHelp
+
+SUMMARY:
+Exports: askQuestion, getRecommendations, getAlternatives, startChat, showHelp
+
+Functions:
+  getAnalysisData()
+  askQuestion(question, context, options)
+  getRecommendations(analysisResults, options)
+  getAlternatives(packageName, options)
+  startChat(context, options)
+  showHelp()
+
+Imports: 10 modules
+
+## src/alerts/github-tracker.js
+EXPORTS: checkGitHubIssues, fetchGitHubIssues, TRACKED_REPOS, getTrackedPackageCount, getTrackedPackagesByCategory
+
+SUMMARY:
+Exports: checkGitHubIssues, fetchGitHubIssues, TRACKED_REPOS, getTrackedPackageCount, getTrackedPackagesByCategory
+
+Functions:
+  makeGitHubRequest(path, params)
+  fetchGitHubIssues(packageName)
+  analyzeIssues(issues, packageName)
+  determineTrend(last7Days, last30Days)
+  processBatch(packages, concurrency, onProgress)
+  checkGitHubIssues(packages, options)
+  getTrackedPackageCount()
+  getTrackedPackagesByCategory()
+
+Imports: 5 modules
+
+## src/commands/snapshot.js
+EXPORTS: saveSnapshot, listSnapshots, viewSnapshot, deleteSnapshot, showHelp
+
+SUMMARY:
+Exports: saveSnapshot, listSnapshots, viewSnapshot, deleteSnapshot, showHelp
+
+Functions:
+  saveSnapshot(options)
+  listSnapshots(options)
+  viewSnapshot(snapshotId, options)
+  deleteSnapshot(snapshotId, options)
+  buildNodesFromAnalysis(analysisData)
+  buildLinksFromAnalysis(analysisData)
+  showHelp()
+
+Imports: 7 modules
+
+## src/services/registry-client.js
+EXPORTS: fetchPackage, fetchBatch, clearCache, getCacheStats
+
+SUMMARY:
+Exports: fetchPackage, fetchBatch, clearCache, getCacheStats
+
+Functions:
+  ensureCacheDir()
+  getCachePath(packageName)
+  readFromDiskCache(packageName)
+  writeToDiskCache(packageName, data)
+  httpsGet(url, retryCount)
+  fetchPackage(packageName, useCache)
+  fetchBatch(packageNames, useCache)
+  clearCache()
+  getCacheStats()
+
+Imports: 4 modules
+
+## src/alerts/index.js
+EXPORTS: checkEcosystemAlerts, formatAlerts, getAlertsSummary, fetchDynamicAlerts
+
+SUMMARY:
+Exports: checkEcosystemAlerts, formatAlerts, getAlertsSummary, fetchDynamicAlerts
+
+Functions:
+  checkEcosystemAlerts(projectPath, dependencies)
+  fetchDynamicAlerts(installedVersions)
+  mapSeverityToLevel(severity)
+  categorizeIssue(issue)
+  formatAlerts(alerts)
+  getAlertIcon(severity)
+  getAlertColor(severity)
+  getAlertsSummary(alerts)
+
+Imports: 2 modules
+

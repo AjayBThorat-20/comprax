@@ -1,0 +1,27 @@
+# devCampuss - Compressed Codebase
+
+I've compressed this codebase for your analysis.
+
+## Project Context
+
+- **Runtime:** Node.js
+- **Database:** SQLite
+- **Key Libraries:** Axios
+- **Total Files:** 10
+
+## Suggested Analysis Tasks
+
+## General Analysis Questions
+
+You can ask me to:
+- Explain the overall architecture and design patterns
+- Identify the main data flow through the application
+- Find potential bugs, security issues, or code smells
+- Suggest improvements, refactoring, or optimizations
+- Generate documentation for specific modules
+- Review error handling and edge cases
+- Analyze dependencies and suggest updates
+
+---
+
+**Ready to analyze!** Ask me anything about this codebase.

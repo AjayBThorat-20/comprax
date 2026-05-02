@@ -11,7 +11,7 @@ export function formatCombined(fileData, basePath) {
   for (const file of fileData) {
     const relativePath = path.relative(basePath, file.path)
     output += `## ${relativePath}\n`
-    output += file.code + "\n\n"
+    output += file.code.trim() + "\n\n"
   }
 
   return output
@@ -51,13 +51,12 @@ export function formatCombinedHybrid(fileData, basePath, stack, projectName, sem
       output += `EXPORTS: ${file.exports}\n`
     }
     
+    // CRITICAL FIX: Always include code, optionally add summary first
     if (semantic && file.summary) {
       output += `\nSUMMARY:\n${file.summary}\n\n`
     }
     
-    if (!semantic) {
-      output += "\n" + file.code + "\n\n"
-    }
+    output += file.code.trim() + "\n\n"
   }
 
   return output
@@ -69,7 +68,7 @@ export function formatDirectory(files, dirName) {
   for (const file of files) {
     const fileName = path.basename(file.path)
     output += `## ${fileName}\n`
-    output += file.code + "\n\n"
+    output += file.code.trim() + "\n\n"
   }
   
   return output
@@ -86,13 +85,12 @@ export function formatDirectoryHybrid(files, dirName, semantic = false) {
       output += `EXPORTS: ${file.exports}\n`
     }
     
+    // CRITICAL FIX: Always include code, optionally add summary first
     if (semantic && file.summary) {
       output += `\nSUMMARY:\n${file.summary}\n\n`
     }
     
-    if (!semantic) {
-      output += "\n" + file.code + "\n\n"
-    }
+    output += file.code.trim() + "\n\n"
   }
   
   return output

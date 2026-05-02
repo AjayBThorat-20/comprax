@@ -1,110 +1,64 @@
-/**
- * Detect exports in JavaScript/TypeScript files
- */
 export function detectExports(code, filepath) {
   const exports = []
-
-  // Pattern 1: export function functionName
-  const namedFunctionPattern = /export\s+function\s+(\w+)/g
-  let match
-  while ((match = namedFunctionPattern.exec(code)) !== null) {
-    exports.push({ name: match[1], type: 'function' })
-  }
-
-  // Pattern 2: export const/let/var name
-  const namedConstPattern = /export\s+(?:const|let|var)\s+(\w+)/g
-  while ((match = namedConstPattern.exec(code)) !== null) {
-    exports.push({ name: match[1], type: 'variable' })
-  }
-
-  // Pattern 3: export class ClassName
-  const namedClassPattern = /export\s+class\s+(\w+)/g
-  while ((match = namedClassPattern.exec(code)) !== null) {
-    exports.push({ name: match[1], type: 'class' })
-  }
-
-  // Pattern 4: export default function functionName
-  const defaultFunctionMatch = code.match(/export\s+default\s+function\s+(\w+)/)
-  if (defaultFunctionMatch && defaultFunctionMatch[1]) {
-    exports.push({ name: defaultFunctionMatch[1], type: 'default', kind: 'function' })
-  }
-
-  // Pattern 5: export default class ClassName
-  const defaultClassMatch = code.match(/export\s+default\s+class\s+(\w+)/)
-  if (defaultClassMatch && defaultClassMatch[1]) {
-    exports.push({ name: defaultClassMatch[1], type: 'default', kind: 'class' })
-  }
-
-  // Pattern 6: export { foo, bar }
-  const namedExportsPattern = /export\s+{([^}]+)}/g
-  while ((match = namedExportsPattern.exec(code)) !== null) {
-    const names = match[1]
-      .split(',')
-      .map(n => {
-        const parts = n.trim().split(/\s+as\s+/)
-        return parts[0].trim()
-      })
-      .filter(n => n.length > 0)
-    
-    names.forEach(name => {
-      exports.push({ name, type: 'named' })
-    })
-  }
-
-  // Pattern 7: module.exports = { foo, bar }
-  const commonJSMatch = code.match(/module\.exports\s*=\s*{([^}]+)}/)
-  if (commonJSMatch && commonJSMatch[1]) {
-    const names = commonJSMatch[1]
-      .split(',')
-      .map(n => n.trim().split(':')[0].trim())
-      .filter(n => n.length > 0 && n !== '...')
-    
-    names.forEach(name => {
-      exports.push({ name, type: 'commonjs' })
-    })
-  }
-
-  // Pattern 8: module.exports = something
-  const commonJSDirectMatch = code.match(/module\.exports\s*=\s*(\w+)/)
-  if (commonJSDirectMatch && commonJSDirectMatch[1] && !commonJSMatch) {
-    exports.push({ name: commonJSDirectMatch[1], type: 'commonjs', kind: 'direct' })
-  }
-
-  // Pattern 9: exports.functionName
-  const exportsPropertyPattern = /exports\.(\w+)\s*=/g
-  while ((match = exportsPropertyPattern.exec(code)) !== null) {
-    exports.push({ name: match[1], type: 'commonjs-property' })
-  }
-
-  // Remove duplicates
-  const unique = []
-  const seen = new Set()
   
-  for (const exp of exports) {
-    const key = `${exp.name}-${exp.type}`
-    if (!seen.has(key)) {
-      seen.add(key)
-      unique.push(exp)
-    }
+  // ES6: export function/const/class name
+  const namedExportRegex = /export\s+(?:const|let|var|function|class)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g
+  let match
+  while ((match = namedExportRegex.exec(code)) !== null) {
+    exports.push({ name: match[1], type: 'named' })
   }
-
+  
+  // ES6: export default
+  if (/export\s+default/.test(code)) {
+    const defaultMatch = code.match(/export\s+default\s+(?:function|class)?\s*([a-zA-Z_$][a-zA-Z0-9_$]*)?/)
+    const name = defaultMatch && defaultMatch[1] ? defaultMatch[1] : 'default'
+    exports.push({ name: name, type: 'default' })
+  }
+  
+  // ES6: export { foo, bar }
+  const exportListRegex = /export\s*\{\s*([^}]+)\s*\}/g
+  while ((match = exportListRegex.exec(code)) !== null) {
+    const names = match[1].split(',').map(n => n.trim().split(/\s+as\s+/)[0])
+    names.forEach(name => {
+      if (name) exports.push({ name: name, type: 'named' })
+    })
+  }
+  
+  // CommonJS: module.exports = { ... }
+  const cjsObjectRegex = /module\.exports\s*=\s*\{([^}]+)\}/
+  const cjsMatch = code.match(cjsObjectRegex)
+  if (cjsMatch) {
+    const names = cjsMatch[1].split(',').map(n => n.trim().split(':')[0])
+    names.forEach(name => {
+      if (name) exports.push({ name: name, type: 'commonjs' })
+    })
+  }
+  
+  // CommonJS: module.exports = value
+  const cjsDirectRegex = /module\.exports\s*=\s*([a-zA-Z_$][a-zA-Z0-9_$]*)/
+  const cjsDirectMatch = code.match(cjsDirectRegex)
+  if (cjsDirectMatch && cjsDirectMatch[1] !== '{') {
+    exports.push({ name: cjsDirectMatch[1], type: 'commonjs' })
+  }
+  
+  // CommonJS: exports.name = value
+  const cjsPropertyRegex = /exports\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/g
+  while ((match = cjsPropertyRegex.exec(code)) !== null) {
+    exports.push({ name: match[1], type: 'commonjs' })
+  }
+  
+  // Deduplicate
+  const seen = new Set()
+  const unique = exports.filter(exp => {
+    if (seen.has(exp.name)) return false
+    seen.add(exp.name)
+    return true
+  })
+  
   return unique
 }
 
-/**
- * Format exports for display
- */
 export function formatExports(exports) {
-  if (!exports || exports.length === 0) {
-    return null
-  }
-
-  const parts = exports.map(exp => {
-    if (exp.type === 'default') {
-      return `default:${exp.name}`
-    }
-    return exp.name
-  })
-
-  return parts.join(', ')
+  if (!exports || exports.length === 0) return null
+  return exports.map(e => e.name).join(', ')
 }
