@@ -24,6 +24,11 @@ program
   .option("-o, --output <path>", "output path (directory for split mode, file for combined)", "comprax-output")
   .option("-c, --combined", "create single combined file instead of directory structure", false)
   .option("-m, --mode <mode>", "compression mode: basic or hybrid (default: basic)", "basic")
+  .option("--semantic", "include semantic summaries (AST-based)", false)
+  .option("--smart", "enable smart filtering (skip low-importance files)", false)
+  .option("--threshold <number>", "importance threshold for smart mode (default: 5)", "5")
+  .option("--incremental", "only process changed files (uses cache)", false)
+  .option("--top <number>", "include only top N most important files")
   .option("--verbose", "show detailed processing info", false)
   .option("-e, --exclude <dirs...>", "additional directories to exclude (space-separated)")
   .option("-i, --include <exts...>", "file extensions to include (space-separated)")
@@ -36,31 +41,71 @@ Examples:
   $ comprax ./src -c -o output.txt      Single file output
   $ comprax . -m hybrid                 Hybrid mode with exports & stack detection
   $ comprax . -m hybrid -c              Hybrid mode, single file
+  $ comprax . --semantic                With semantic summaries (v2.0.2)
+  $ comprax . --semantic --smart        Smart filtering + summaries
+  $ comprax . --incremental             Only compress changed files
+  $ comprax . --top 20                  Only top 20 most important files
   $ comprax . -e tests docs             Exclude directories
   $ comprax . -i .ts .tsx               Only TypeScript files
   $ comprax . --verbose                 Show detailed progress
 
 Modes:
-  basic   - Simple compression (default)
-  hybrid  - With export detection & stack analysis (v2)
+  basic      - Simple compression (default)
+  hybrid     - With export detection & stack analysis (v2.0)
+
+v2.0.2 Features:
+  --semantic     - AST-based semantic summaries
+  --smart        - Intelligent file filtering by importance
+  --incremental  - Cache-based, only process changes
+  --top N        - Include only N most important files
 
 Documentation:
   GitHub: https://github.com/AjayBThorat-20/comprax
   Issues: https://github.com/AjayBThorat-20/comprax/issues
   `)
   .action(async (projectPath, options) => {
-    // Validate mode
     if (options.mode && !['basic', 'hybrid'].includes(options.mode)) {
       console.error(chalk.red(`\n❌ Invalid mode: ${options.mode}`))
       console.log(chalk.yellow('Valid modes: basic, hybrid\n'))
       process.exit(1)
     }
 
+    if (options.threshold) {
+      options.threshold = parseInt(options.threshold, 10)
+      if (isNaN(options.threshold)) {
+        console.error(chalk.red('\n❌ Invalid threshold: must be a number\n'))
+        process.exit(1)
+      }
+    }
+
+    if (options.top) {
+      options.top = parseInt(options.top, 10)
+      if (isNaN(options.top) || options.top < 1) {
+        console.error(chalk.red('\n❌ Invalid top: must be a positive number\n'))
+        process.exit(1)
+      }
+    }
+
     try {
       console.log(chalk.cyan.bold("\n🚀 Comprax v" + packageJson.version + "\n"))
+      
       if (options.mode === 'hybrid') {
-        console.log(chalk.blue("📊 Mode: Hybrid (with export detection & stack analysis)\n"))
+        console.log(chalk.blue("📊 Mode: Hybrid (with export detection & stack analysis)"))
       }
+      if (options.semantic) {
+        console.log(chalk.blue("🧠 Semantic: AST-based summaries enabled"))
+      }
+      if (options.smart) {
+        console.log(chalk.blue(`🎯 Smart: Filtering by importance (threshold: ${options.threshold || 5})`))
+      }
+      if (options.incremental) {
+        console.log(chalk.blue("⚡ Incremental: Cache-based processing"))
+      }
+      if (options.top) {
+        console.log(chalk.blue(`🔝 Top: Including only ${options.top} most important files`))
+      }
+      console.log()
+      
       await run(projectPath, options)
     } catch (err) {
       console.error(chalk.red.bold("\n❌ Error:"), err.message)
@@ -71,7 +116,6 @@ Documentation:
     }
   })
 
-// Info command
 program
   .command('info')
   .description('Display project information and statistics')
@@ -82,15 +126,20 @@ program
     console.log(chalk.white('Author:'), packageJson.author)
     console.log(chalk.white('License:'), packageJson.license)
     console.log()
-    console.log(chalk.yellow('New in v2.0.0:'))
+    console.log(chalk.yellow('Features in v2.0:'))
     console.log('  ✨ Export detection')
     console.log('  ✨ Stack analysis')
     console.log('  ✨ Hybrid mode')
     console.log('  ✨ Smart prompt generation')
     console.log()
+    console.log(chalk.yellow('New in v2.0.2:'))
+    console.log('  🧠 Semantic summaries (AST-based)')
+    console.log('  🎯 Smart filtering by importance')
+    console.log('  ⚡ Incremental processing')
+    console.log('  🔝 Top N file selection')
+    console.log()
   })
 
-// Examples command
 program
   .command('examples')
   .description('Show usage examples')
@@ -102,10 +151,33 @@ program
     console.log('  comprax ./my-project          # Compress specific project')
     console.log()
     
-    console.log(chalk.yellow('Hybrid Mode (v2):'))
+    console.log(chalk.yellow('Hybrid Mode (v2.0):'))
     console.log('  comprax . -m hybrid           # With export detection & stack analysis')
     console.log('  comprax . -m hybrid -c        # Hybrid mode, single file')
     console.log('  comprax . -m hybrid -v        # Hybrid mode, verbose')
+    console.log()
+    
+    console.log(chalk.yellow('Semantic Mode (v2.0.2):'))
+    console.log('  comprax . --semantic          # AST-based summaries')
+    console.log('  comprax . --semantic -c       # Semantic, single file')
+    console.log('  comprax . -m hybrid --semantic # Hybrid + semantic')
+    console.log()
+    
+    console.log(chalk.yellow('Smart Filtering (v2.0.2):'))
+    console.log('  comprax . --smart             # Skip low-importance files')
+    console.log('  comprax . --smart --threshold 10  # Custom threshold')
+    console.log('  comprax . --top 20            # Only top 20 files')
+    console.log()
+    
+    console.log(chalk.yellow('Incremental Mode (v2.0.2):'))
+    console.log('  comprax . --incremental       # Only process changed files')
+    console.log('  comprax . --incremental -v    # With verbose output')
+    console.log()
+    
+    console.log(chalk.yellow('Combined Features:'))
+    console.log('  comprax . --semantic --smart --top 30')
+    console.log('  comprax . -m hybrid --semantic --incremental')
+    console.log('  comprax . --smart --threshold 8 -c -o analysis.txt')
     console.log()
     
     console.log(chalk.yellow('Output Modes:'))
@@ -121,7 +193,6 @@ program
     console.log()
   })
 
-// Stats command
 program
   .command('stats [path]')
   .description('Show statistics for compressed output')

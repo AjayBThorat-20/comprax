@@ -1,158 +1,156 @@
 import path from "path"
-import { formatExports } from "./export-detector.js"
-import { formatStack } from "./stack-detector.js"
 
-/**
- * Format files for a single directory (basic mode)
- */
-export function formatDirectory(files, dirName) {
-  const header = [
-    '='.repeat(70),
-    `DIRECTORY: ${dirName}`,
-    `FILES: ${files.length}`,
-    '='.repeat(70),
-    ''
-  ].join('\n')
+export function formatCombined(fileData, basePath) {
+  const projectName = path.basename(basePath)
+  let output = ""
   
-  const sections = files.map(f => {
-    const filename = path.basename(f.relativePath)
-    return `## ${filename}\n${f.code}`
-  })
-  
-  return header + sections.join('\n\n')
-}
-
-/**
- * Format all files combined (basic mode)
- */
-export function formatCombined(files, projectPath) {
-  const sections = files.map(f => {
-    const relativePath = path.relative(projectPath, f.path)
-    return `## ${relativePath}\n${f.code}`
-  })
-  
-  return sections.join('\n\n')
-}
-
-/**
- * Format combined with hybrid mode (v2)
- */
-export function formatCombinedHybrid(files, projectPath, stack, projectName) {
-  let output = ''
-  
-  // Add header with project context
-  output += '='.repeat(70) + '\n'
+  output += "=".repeat(70) + "\n"
   output += `PROJECT: ${projectName}\n`
-  output += '='.repeat(70) + '\n'
-  output += formatStack(stack) + '\n'
-  output += `Total Files: ${files.length}\n`
-  output += '='.repeat(70) + '\n\n'
+  output += "=".repeat(70) + "\n\n"
+
+  for (const file of fileData) {
+    const relativePath = path.relative(basePath, file.path)
+    output += `## ${relativePath}\n`
+    output += file.code + "\n\n"
+  }
+
+  return output
+}
+
+export function formatCombinedHybrid(fileData, basePath, stack, projectName, semantic = false) {
+  let output = ""
   
-  // Add files with export info
-  const sections = files.map(f => {
-    const relativePath = path.relative(projectPath, f.path)
-    let section = `## ${relativePath}\n`
-    
-    // Add exports if available
-    if (f.exports && f.exports.length > 0) {
-      const exportStr = formatExports(f.exports)
-      if (exportStr) {
-        section += `EXPORTS: ${exportStr}\n`
-      }
+  output += "=".repeat(70) + "\n"
+  output += `PROJECT: ${projectName}\n`
+  output += "=".repeat(70) + "\n"
+  
+  if (stack) {
+    if (stack.framework) {
+      output += `Framework: ${stack.framework}\n`
+    } else {
+      output += `Runtime: ${stack.runtime}\n`
     }
     
-    section += f.code
+    if (stack.database.length > 0) {
+      output += `Database: ${stack.database.join(", ")}\n`
+    }
     
-    return section
-  })
+    if (stack.libraries.length > 0) {
+      output += `Libraries: ${stack.libraries.slice(0, 5).join(", ")}\n`
+    }
+  }
   
-  output += sections.join('\n\n')
+  output += `Total Files: ${fileData.length}\n`
+  output += "=".repeat(70) + "\n\n"
+
+  for (const file of fileData) {
+    const relativePath = path.relative(basePath, file.path)
+    output += `## ${relativePath}\n`
+    
+    if (file.exports) {
+      output += `EXPORTS: ${file.exports}\n`
+    }
+    
+    if (semantic && file.summary) {
+      output += `\nSUMMARY:\n${file.summary}\n\n`
+    }
+    
+    if (!semantic) {
+      output += "\n" + file.code + "\n\n"
+    }
+  }
+
+  return output
+}
+
+export function formatDirectory(files, dirName) {
+  let output = ""
+  
+  for (const file of files) {
+    const fileName = path.basename(file.path)
+    output += `## ${fileName}\n`
+    output += file.code + "\n\n"
+  }
   
   return output
 }
 
-/**
- * Format directory with hybrid mode (v2)
- */
-export function formatDirectoryHybrid(files, dirName) {
-  const header = [
-    '='.repeat(70),
-    `DIRECTORY: ${dirName}`,
-    `FILES: ${files.length}`,
-    '='.repeat(70),
-    ''
-  ].join('\n')
+export function formatDirectoryHybrid(files, dirName, semantic = false) {
+  let output = ""
   
-  const sections = files.map(f => {
-    const filename = path.basename(f.relativePath)
-    let section = `## ${filename}\n`
+  for (const file of files) {
+    const fileName = path.basename(file.path)
+    output += `## ${fileName}\n`
     
-    // Add exports if available
-    if (f.exports && f.exports.length > 0) {
-      const exportStr = formatExports(f.exports)
-      if (exportStr) {
-        section += `EXPORTS: ${exportStr}\n`
-      }
+    if (file.exports) {
+      output += `EXPORTS: ${file.exports}\n`
     }
     
-    section += f.code
+    if (semantic && file.summary) {
+      output += `\nSUMMARY:\n${file.summary}\n\n`
+    }
     
-    return section
-  })
+    if (!semantic) {
+      output += "\n" + file.code + "\n\n"
+    }
+  }
   
-  return header + sections.join('\n\n')
+  return output
 }
 
-/**
- * Create summary file
- */
 export function formatSummary(organized, stats, stack, projectName) {
-  const lines = []
+  let output = ""
   
-  lines.push('='.repeat(70))
-  lines.push('COMPRAX COMPRESSION SUMMARY')
-  lines.push('='.repeat(70))
-  lines.push('')
-  lines.push(`Project: ${projectName}`)
-  lines.push(`Generated: ${new Date().toISOString()}`)
-  lines.push(`Total Files: ${stats.totalFiles}`)
-  lines.push(`Total Directories: ${organized.size}`)
-  lines.push(`Original Size: ${formatBytes(stats.originalSize)}`)
-  lines.push(`Compressed Size: ${formatBytes(stats.compressedSize)}`)
-  lines.push(`Reduction: ${stats.savedPercent}%`)
-  lines.push('')
+  output += "=".repeat(70) + "\n"
+  output += "COMPRAX COMPRESSION SUMMARY\n"
+  output += "=".repeat(70) + "\n\n"
   
-  // Add stack info if available
+  output += `Project: ${projectName}\n`
+  output += `Generated: ${new Date().toISOString()}\n`
+  output += `Total Files: ${stats.totalFiles}\n`
+  output += `Total Directories: ${organized.size}\n`
+  
+  const originalKB = (stats.originalSize / 1024).toFixed(1)
+  const compressedKB = (stats.compressedSize / 1024).toFixed(1)
+  
+  output += `Original Size: ${originalKB} KB\n`
+  output += `Compressed Size: ${compressedKB} KB\n`
+  output += `Reduction: ${stats.savedPercent}%\n\n`
+  
   if (stack) {
-    lines.push('='.repeat(70))
-    lines.push('PROJECT STACK')
-    lines.push('='.repeat(70))
-    lines.push(formatStack(stack))
-    lines.push('')
+    output += "=".repeat(70) + "\n"
+    output += "PROJECT STACK\n"
+    output += "=".repeat(70) + "\n"
+    
+    if (stack.framework) {
+      output += `Framework: ${stack.framework}\n`
+    } else {
+      output += `Runtime: ${stack.runtime}\n`
+    }
+    
+    if (stack.database.length > 0) {
+      output += `Database: ${stack.database.join(", ")}\n`
+    }
+    
+    if (stack.libraries.length > 0) {
+      output += `Libraries: ${stack.libraries.join(", ")}\n`
+    }
+    
+    output += "\n"
   }
   
-  lines.push('='.repeat(70))
-  lines.push('DIRECTORY BREAKDOWN')
-  lines.push('='.repeat(70))
-  lines.push('')
+  output += "=".repeat(70) + "\n"
+  output += "DIRECTORY BREAKDOWN\n"
+  output += "=".repeat(70) + "\n\n"
   
-  // Sort directories
-  const dirs = Array.from(organized.keys()).sort()
-  
-  for (const dir of dirs) {
-    const files = organized.get(dir)
-    const totalSize = files.reduce((sum, f) => sum + f.code.length, 0)
-    lines.push(`📁 ${dir}`)
-    lines.push(`   Files: ${files.length}`)
-    lines.push(`   Size: ${formatBytes(totalSize)}`)
-    lines.push('')
+  for (const [dirName, files] of organized) {
+    const dirSize = files.reduce((sum, f) => sum + (f.compressedSize || f.code.length), 0)
+    const sizeKB = (dirSize / 1024).toFixed(1)
+    
+    output += `📁 ${dirName}\n`
+    output += `   Files: ${files.length}\n`
+    output += `   Size: ${sizeKB} KB\n\n`
   }
   
-  return lines.join('\n')
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + " B"
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+  return output
 }

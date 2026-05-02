@@ -16,9 +16,14 @@ import { writeOutput } from "./core/writer.js"
 import { writeOrganized } from "./core/multi-writer.js"
 import { printStats } from "./utils/stats-printer.js"
 import { startSpinner, succeedSpinner, updateSpinner, logWarning, logInfo } from "./utils/logger.js"
+import { parseAST } from "./core/parser/ast-parser.js"
+import { extractStructure } from "./core/semantic/extractor.js"
+import { summarizeStructure } from "./core/semantic/summarizer.js"
+import { scoreStructure, shouldIncludeFile } from "./core/semantic/scorer.js"
+import { loadCache, saveCache, hasFileChanged, getCachedData, setCachedData } from "./core/cache/hash.js"
 import chalk from "chalk"
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 export async function run(projectPath, options = {}) {
   const { 
@@ -27,20 +32,24 @@ export async function run(projectPath, options = {}) {
     mode = "basic",
     verbose = false,
     exclude = [],
-    include = []
+    include = [],
+    semantic = false,
+    smart = false,
+    threshold = 5,
+    incremental = false,
+    top = null
   } = options
 
-  // Show configuration
   if (verbose) {
     console.log(chalk.cyan("Configuration:"))
     logInfo(`Mode: ${mode === 'hybrid' ? 'Hybrid (with exports & stack)' : 'Basic'}`)
+    if (semantic) logInfo("Semantic: Enabled")
+    if (smart) logInfo(`Smart filtering: Enabled (threshold: ${threshold})`)
+    if (incremental) logInfo("Incremental: Enabled")
+    if (top) logInfo(`Top files: ${top}`)
     logInfo(`Output: ${combined ? 'Single file' : 'Directory structure'}`)
-    if (exclude.length > 0) {
-      logInfo(`Excluding dirs: ${exclude.join(", ")}`)
-    }
-    if (include.length > 0) {
-      logInfo(`Including only: ${include.join(", ")}`)
-    }
+    if (exclude.length > 0) logInfo(`Excluding dirs: ${exclude.join(", ")}`)
+    if (include.length > 0) logInfo(`Including only: ${include.join(", ")}`)
     console.log()
   }
 
@@ -55,16 +64,16 @@ export async function run(projectPath, options = {}) {
     throw new Error(`Path is not a directory: ${absolutePath}`)
   }
 
-  resetScanner()
+  const cacheDir = incremental ? path.join(absolutePath, ".comprax-cache") : null
+  let cache = incremental ? loadCache(cacheDir) : {}
 
+  resetScanner()
   const shouldInclude = createFilter({ exclude, include })
 
-  // Step 1: Scan
   startSpinner("Scanning project...")
   const allFiles = scanDir(absolutePath)
   succeedSpinner(`Found ${allFiles.length} total files`)
 
-  // Step 2: Filter
   startSpinner("Filtering code files...")
   const filtered = allFiles.filter(shouldInclude)
   succeedSpinner(`Filtered to ${filtered.length} code files`)
@@ -74,20 +83,19 @@ export async function run(projectPath, options = {}) {
     return
   }
 
-  // Step 3: Detect stack (hybrid mode only)
   let stack = null
-  if (mode === 'hybrid') {
+  if (mode === 'hybrid' || semantic) {
     startSpinner("Detecting project stack...")
     stack = detectStack(absolutePath)
     succeedSpinner(`Stack detected: ${stack.framework || stack.runtime}`)
   }
 
-  // Step 4: Compress
   startSpinner("Compressing files...")
   
   const fileData = []
   let totalOriginalSize = 0
   let skippedFiles = 0
+  let cachedFiles = 0
   let processedCount = 0
 
   for (const file of filtered) {
@@ -97,11 +105,18 @@ export async function run(projectPath, options = {}) {
       totalOriginalSize += originalSize
 
       if (originalSize > MAX_FILE_SIZE) {
-        if (verbose) {
-          logWarning(`Skipping large file: ${path.relative(absolutePath, file)}`)
-        }
+        if (verbose) logWarning(`Skipping large file: ${path.relative(absolutePath, file)}`)
         skippedFiles++
         continue
+      }
+
+      if (incremental && !hasFileChanged(file, code, cache)) {
+        const cachedData = getCachedData(file, cache);
+        if (cachedData && cachedData.data) {
+          fileData.push(cachedData.data);
+          cachedFiles++;
+          continue;
+        }
       }
 
       const compressed = compress(code)
@@ -109,15 +124,45 @@ export async function run(projectPath, options = {}) {
       const data = {
         path: file,
         code: compressed,
-        originalSize
+        originalSize,
+        exports: null,
+        structure: null,
+        summary: null,
+        score: 0
       }
       
-      // Add exports for hybrid mode
-      if (mode === 'hybrid') {
-        data.exports = detectExports(code, file)
+      if (mode === 'hybrid' || semantic || smart) {
+        const ast = parseAST(code, file)
+        
+        if (ast) {
+          data.structure = extractStructure(ast)
+          data.score = scoreStructure(data.structure)
+
+          if (smart && !shouldIncludeFile(data.structure, { smart, threshold })) {
+            skippedFiles++
+            continue
+          }
+
+          if (semantic) {
+            data.summary = summarizeStructure(data.structure)
+          }
+
+          // CRITICAL FIX: Convert exports array to string
+          if (data.structure.exports && data.structure.exports.length > 0) {
+            data.exports = data.structure.exports.join(", ")
+          } else {
+            data.exports = detectExports(code, file)
+          }
+        } else {
+          data.exports = detectExports(code, file)
+        }
       }
 
       fileData.push(data)
+
+      if (incremental) {
+        setCachedData(file, code, data, cache)
+      }
 
       processedCount++
       
@@ -125,22 +170,39 @@ export async function run(projectPath, options = {}) {
         updateSpinner(`Compressing files... (${processedCount}/${filtered.length})`)
       }
     } catch (err) {
-      if (verbose) {
-        logWarning(`Could not read: ${path.relative(absolutePath, file)}`)
-      }
+      if (verbose) logWarning(`Could not read: ${path.relative(absolutePath, file)}`)
       skippedFiles++
       continue
     }
   }
 
-  succeedSpinner(`Processed ${fileData.length} files`)
+  if (smart || top) {
+    fileData.sort((a, b) => (b.score || 0) - (a.score || 0))
+  }
+
+  if (top && fileData.length > top) {
+    fileData.splice(top)
+  }
+
+  const statusMsg = cachedFiles > 0 
+    ? `Processed ${processedCount} files, reused ${cachedFiles} from cache${skippedFiles > 0 ? `, skipped ${skippedFiles}` : ""}`
+    : `Processed ${fileData.length} files${skippedFiles > 0 ? ` (skipped ${skippedFiles})` : ""}`;
+  
+  succeedSpinner(statusMsg)
+
+  if (incremental && cacheDir) {
+    saveCache(cacheDir, cache)
+  }
 
   if (fileData.length === 0) {
     throw new Error("No files could be processed")
   }
 
-  // Calculate stats
-  const compressedSize = fileData.reduce((sum, f) => sum + f.code.length, 0)
+  const compressedSize = fileData.reduce((sum, f) => {
+    if (semantic && f.summary) return sum + f.summary.length
+    return sum + (f.code?.length || 0)
+  }, 0)
+
   const savedPercent = calculateCompressionRatio(totalOriginalSize, compressedSize)
 
   const stats = {
@@ -153,12 +215,10 @@ export async function run(projectPath, options = {}) {
 
   const projectName = path.basename(absolutePath)
 
-  // Step 5: Format and write
   if (combined) {
-    // Single file mode
     startSpinner("Formatting output...")
-    const formattedOutput = mode === 'hybrid'
-      ? formatCombinedHybrid(fileData, absolutePath, stack, projectName)
+    const formattedOutput = mode === 'hybrid' || semantic
+      ? formatCombinedHybrid(fileData, absolutePath, stack, projectName, semantic)
       : formatCombined(fileData, absolutePath)
     succeedSpinner("Output formatted")
 
@@ -167,15 +227,13 @@ export async function run(projectPath, options = {}) {
     writeOutput(formattedOutput, outputFile)
     succeedSpinner(`Output written to: ${outputFile}`)
     
-    // Generate prompt file for hybrid mode
-    if (mode === 'hybrid') {
+    if (mode === 'hybrid' || semantic) {
       const promptContent = generatePrompt(stack, fileData.length, projectName)
       const promptFile = outputFile.replace('.txt', '-prompt.txt')
       fs.writeFileSync(promptFile, promptContent, 'utf-8')
       console.log(chalk.green(`📝 Generated prompt file: ${promptFile}`))
     }
   } else {
-    // Directory structure mode
     startSpinner("Organizing by directory...")
     const organized = organizeByDirectory(fileData, absolutePath)
     succeedSpinner(`Organized into ${organized.size} directories`)
@@ -191,11 +249,10 @@ export async function run(projectPath, options = {}) {
     succeedSpinner("Summary created")
 
     startSpinner("Writing files...")
-    const result = writeOrganized(organized, output, projectName, summaryContent, mode)
+    const result = writeOrganized(organized, output, projectName, summaryContent, mode, semantic)
     succeedSpinner(`Written to: ${result.mainDir}/ (${result.filesWritten} files)`)
     
-    // Generate prompt file for hybrid mode
-    if (mode === 'hybrid') {
+    if (mode === 'hybrid' || semantic) {
       const promptContent = generatePrompt(stack, fileData.length, projectName)
       const promptPath = path.join(output, projectName, '_prompt.txt')
       fs.writeFileSync(promptPath, promptContent, 'utf-8')
@@ -203,21 +260,22 @@ export async function run(projectPath, options = {}) {
     }
   }
 
-  // Step 6: Display statistics
   printStats(stats)
 
-  // Show next steps based on mode
   if (!combined) {
     console.log(chalk.green("\n💡 Directory structure created!"))
     console.log(chalk.white(`   Open ${output}/${projectName}/ to see organized files`))
     console.log(chalk.white(`   Start with _summary.txt for an overview\n`))
   }
   
-  if (mode === 'hybrid') {
-    console.log(chalk.cyan("✨ Hybrid mode features:"))
+  if (mode === 'hybrid' || semantic) {
+    console.log(chalk.cyan("✨ Enhanced features:"))
     console.log(chalk.white("   ✅ Export detection enabled"))
     console.log(chalk.white("   ✅ Stack analysis included"))
     console.log(chalk.white("   ✅ Smart prompt generated"))
+    if (semantic) console.log(chalk.white("   ✅ Semantic summaries included"))
+    if (smart) console.log(chalk.white(`   ✅ Smart filtering (threshold: ${threshold})`))
+    if (incremental) console.log(chalk.white("   ✅ Incremental mode enabled"))
     console.log()
   }
 }

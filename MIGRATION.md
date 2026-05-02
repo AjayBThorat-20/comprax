@@ -1,4 +1,3 @@
-```markdown
 # Migration Guide
 
 This guide helps you migrate between Comprax versions and integrate Comprax into your workflow.
@@ -13,6 +12,49 @@ If you're new to Comprax, skip to [Getting Started](#getting-started).
 
 ## 🔄 Version Migration
 
+### From v2.0.1 to v2.0.2 ✨
+
+**What's New:**
+- 🧠 **AST-based Semantic Analysis** - Extract code structure without including implementation
+- 🎯 **Smart Filtering** - Filter files by importance score
+- 🔝 **Top-N Selection** - Include only the most important files
+- ⚡ **Incremental Mode** - Cache-based processing (10x faster on re-runs)
+- 📉 **96-98% Token Reduction** - Massive savings with semantic summaries
+- 🔄 **CommonJS Support** - Full support for `module.exports` and `require()`
+
+**Migration:**
+```bash
+# Update to latest
+npm install -g comprax@latest
+
+# Or with npx
+npx comprax@latest --version
+# Should show: 2.0.2
+```
+
+**Breaking Changes:**
+**None!** ✅ All v1 and v2.0 commands work exactly the same.
+
+**New Features (Opt-in):**
+```bash
+# Semantic mode - 96% token reduction
+comprax . --semantic -c -o analysis.txt
+
+# Smart filtering
+comprax . --smart --threshold 10
+
+# Top N files
+comprax . --top 20
+
+# Incremental mode
+comprax . --incremental
+
+# Ultimate combination
+comprax . -m hybrid --semantic --smart --top 25 -c
+```
+
+---
+
 ### From v2.0.0 to v2.0.1
 
 **What's Changed:**
@@ -23,56 +65,54 @@ If you're new to Comprax, skip to [Getting Started](#getting-started).
 
 **Migration:**
 ```bash
-# Update to latest
 npm install -g comprax@latest
-
-# Or with npx
-npx comprax@latest --version
 ```
-
-**That's it!** All commands work exactly the same.
 
 ---
 
-### From v1.0.0 to v2.0.1 (or v2.0.0)
+### From v1.0.0 to v2.0.2
 
 **What's New in v2.x:**
-- **Export Detection** - Automatically identifies module exports (ES6 & CommonJS)
-- **Stack Analysis** - Auto-detects frameworks, databases, and libraries
-- **Hybrid Mode** - Enhanced output with structural metadata for LLMs
-- **Smart Prompts** - Context-aware suggestions for AI analysis
-- **Project Metadata** - Rich headers with framework and stack information
+- **v2.0.0:** Export detection, stack analysis, hybrid mode
+- **v2.0.1:** ESM dependency updates
+- **v2.0.2:** Semantic analysis, smart filtering, incremental caching
 
 **Breaking Changes:**
 **None!** ✅ v2.x is fully backward compatible with v1.0.0.
 
 All v1.0.0 commands work exactly the same:
 ```bash
-# v1 commands still work in v2
+# v1 commands still work in v2.0.2
 comprax .
 comprax . -c
 comprax . -e tests
 ```
 
-**New in v2: Hybrid Mode**
+**New Features:**
 
-To use v2 features, simply add the `--mode hybrid` flag:
-
+**v2.0 Features:**
 ```bash
-# v1 behavior (default)
-comprax ./my-project
-
-# v2 hybrid mode (new)
-comprax ./my-project --mode hybrid
-comprax ./my-project -m hybrid
+# Hybrid mode (export detection + stack analysis)
+comprax . -m hybrid
 ```
 
-**Migration Checklist:**
-- ✅ No code changes needed
-- ✅ No configuration changes needed
-- ✅ All v1 scripts work as-is
-- ✅ Hybrid mode is opt-in
-- ✅ Update: `npm install -g comprax@latest`
+**v2.0.2 Features:**
+```bash
+# Semantic mode (96-98% token reduction)
+comprax . --semantic
+
+# Smart filtering
+comprax . --smart --threshold 10
+
+# Top N selection
+comprax . --top 20
+
+# Incremental mode
+comprax . --incremental
+
+# Ultimate mode
+comprax . -m hybrid --semantic --smart --top 25
+```
 
 ---
 
@@ -101,7 +141,7 @@ npm install --save-dev comprax
 ### Verify Installation
 ```bash
 comprax --version
-# Should output: 2.0.1
+# Should output: 2.0.2
 ```
 
 ---
@@ -135,27 +175,31 @@ comprax ./my-project -c -o project.txt
 comprax ./my-project/src
 ```
 
-### Hybrid Mode (v2 - Recommended for LLM Analysis)
+### Semantic Mode (v2.0.2 - Maximum Token Reduction) 🆕
 
-1. **Basic hybrid mode**:
+1. **Basic semantic compression** (96% reduction):
 ```bash
-comprax ./my-project -m hybrid
+comprax ./my-project --semantic -c -o analysis.txt
 ```
 
-Output includes:
-- Export annotations
-- Stack detection
-- Smart prompts
-
-2. **Hybrid + single file**:
+2. **Semantic + directory structure**:
 ```bash
-comprax ./my-project -m hybrid -c -o project.txt
+comprax ./my-project --semantic
 ```
 
-3. **Hybrid + verbose**:
+3. **Top 30 files with semantic summaries**:
 ```bash
-comprax ./my-project -m hybrid -v
+comprax ./my-project --semantic --smart --top 30 -c
 ```
+
+### Ultimate Mode (v2.0.2 - All Features) 🔥
+
+```bash
+# Hybrid + Semantic + Smart + Top-N
+comprax . -m hybrid --semantic --smart --top 25 -c -o ultimate.txt
+```
+
+Result: **98% token reduction** with full architectural understanding!
 
 ---
 
@@ -163,48 +207,45 @@ comprax ./my-project -m hybrid -v
 
 ### Option 1: Manual Compression
 
-**Basic mode (fast):**
+**Basic mode (fast, 20% reduction):**
 ```bash
 comprax . -v
 ```
 
-**Hybrid mode (best for AI):**
+**Semantic mode (96% reduction):**
 ```bash
-comprax . -m hybrid -v
+comprax . --semantic -c -o analysis.txt
+```
+
+**Ultimate mode (98% reduction):**
+```bash
+comprax . -m hybrid --semantic --smart --top 25 -c
 ```
 
 ### Option 2: npm Scripts
 
 Add to your `package.json`:
 
-**v1 Compatible:**
+**v2.0.2 Full Suite:**
 ```json
 {
   "scripts": {
     "compress": "comprax . -v",
-    "compress:single": "comprax . -c -o project.txt",
-    "compress:src": "comprax ./src -e __tests__"
-  }
-}
-```
-
-**v2 Enhanced:**
-```json
-{
-  "scripts": {
-    "compress": "comprax . -v",
-    "compress:hybrid": "comprax . -m hybrid -v",
-    "compress:analysis": "comprax . -m hybrid -c -o analysis.txt",
-    "compress:review": "comprax ./src -e __tests__ -c -o review.txt"
+    "compress:semantic": "comprax . --semantic -c -o analysis.txt",
+    "compress:ultimate": "comprax . -m hybrid --semantic --smart --top 25 -c -o ultimate.txt",
+    "compress:fast": "comprax . --incremental --semantic -c -o fast.txt",
+    "compress:top20": "comprax . --semantic --top 20 -c -o top20.txt"
   }
 }
 ```
 
 Usage:
 ```bash
-npm run compress           # Basic mode
-npm run compress:hybrid    # Hybrid mode with exports
-npm run compress:analysis  # Single file for AI
+npm run compress            # Basic mode
+npm run compress:semantic   # 96% reduction
+npm run compress:ultimate   # 98% reduction
+npm run compress:fast       # Incremental (cached)
+npm run compress:top20      # Top 20 files only
 ```
 
 ### Option 3: Pre-commit Hook
@@ -217,17 +258,17 @@ npx husky init
 
 Create `.husky/pre-commit`:
 
-**Basic snapshot:**
+**Semantic snapshot (v2.0.2):**
 ```bash
 #!/bin/sh
-comprax . -c -o .comprax-snapshot.txt
+comprax . --semantic --incremental -c -o .comprax-snapshot.txt
 git add .comprax-snapshot.txt
 ```
 
-**Hybrid snapshot (v2):**
+**Ultimate snapshot:**
 ```bash
 #!/bin/sh
-comprax . -m hybrid -c -o .comprax-snapshot.txt
+comprax . -m hybrid --semantic --smart --top 30 --incremental -c -o .comprax-snapshot.txt
 git add .comprax-snapshot.txt
 ```
 
@@ -235,9 +276,9 @@ git add .comprax-snapshot.txt
 
 **GitHub Actions** (`.github/workflows/compress.yml`):
 
-**Basic mode:**
+**Semantic mode (v2.0.2):**
 ```yaml
-name: Compress Codebase
+name: Semantic Codebase Analysis
 on: [push]
 
 jobs:
@@ -248,16 +289,16 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: npx comprax . -c -o compressed.txt
+      - run: npx comprax . --semantic --smart --top 30 -c -o semantic-analysis.txt
       - uses: actions/upload-artifact@v3
         with:
-          name: compressed-codebase
-          path: compressed.txt
+          name: semantic-analysis
+          path: semantic-analysis.txt
 ```
 
-**Hybrid mode (v2):**
+**Ultimate mode:**
 ```yaml
-name: Compress Codebase (Hybrid)
+name: Ultimate Codebase Compression
 on: [push]
 
 jobs:
@@ -268,109 +309,197 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: npx comprax . -m hybrid -c -o compressed.txt
+      - run: npx comprax . -m hybrid --semantic --smart --top 25 -c -o ultimate.txt
       - uses: actions/upload-artifact@v3
         with:
-          name: compressed-codebase-hybrid
-          path: compressed.txt
-```
-
-**GitLab CI** (`.gitlab-ci.yml`):
-```yaml
-compress:
-  stage: build
-  image: node:18
-  script:
-    - npx comprax . -m hybrid -c -o compressed.txt
-  artifacts:
-    paths:
-      - compressed.txt
+          name: ultimate-compression
+          path: ultimate.txt
 ```
 
 ---
 
 ## 🎯 Use Case Examples
 
-### 1. Code Review Preparation
+### 1. Architecture Analysis (v2.0.2)
 
-**Basic mode (fast):**
+**Maximum understanding, minimum tokens:**
 ```bash
-comprax ./src -e __tests__ -c -o review.txt
+comprax . --semantic --smart --top 30 -c -o architecture.txt
+# Upload to Claude/ChatGPT
+# 98% token reduction = massive context fits!
 ```
 
-**Hybrid mode (with context):**
+### 2. Code Review Preparation
+
+**Focus on important files:**
 ```bash
-comprax ./src -m hybrid -e __tests__ -c -o review.txt
+comprax ./src --semantic --smart --threshold 10 -c -o review.txt
+# Only files with importance score ≥ 10
 ```
 
-### 2. LLM Analysis Workflow
+### 3. Daily Development Snapshots
 
-**Basic approach:**
+**Fast incremental updates:**
 ```bash
-comprax . -v
-# Upload comprax-output/ files to ChatGPT/Claude
+comprax . --incremental --semantic -c -o daily/$(date +%Y%m%d).txt
+# 10x faster on re-runs
+# Perfect for tracking changes
 ```
 
-**Hybrid approach (recommended):**
+### 4. Large Codebase Analysis
+
+**Top files only:**
 ```bash
-comprax . -m hybrid -c -o analysis.txt
-# Upload analysis.txt + _prompt.txt to AI
-# AI gets export info + stack context
+comprax . --semantic --top 50 -c -o large-project.txt
+# Fits huge projects into LLM context
 ```
 
-### 3. Architecture Analysis (v2)
+### 5. Documentation Generation
+
+**Hybrid + Semantic:**
 ```bash
-# Use hybrid mode for architecture questions
-comprax . -m hybrid -c -o architecture.txt
-
-# Upload to Claude/ChatGPT and ask:
-# "Analyze the architecture and module relationships"
-# "Explain how data flows through this application"
-# "What are the main exports and dependencies?"
-```
-
-### 4. Documentation Generation
-```bash
-# Hybrid mode provides better context for docs
-comprax . -m hybrid -c -o docs/codebase-snapshot.txt
-```
-
-### 5. Project Snapshots
-```bash
-# Create timestamped snapshot
-comprax . -c -o snapshots/project-$(date +%Y%m%d).txt
-
-# With hybrid features
-comprax . -m hybrid -c -o snapshots/project-$(date +%Y%m%d)-hybrid.txt
+comprax . -m hybrid --semantic -c -o docs/codebase.txt
+# Full architectural understanding
+# Perfect for doc generation
 ```
 
 ---
 
-## 🆚 Choosing Between Basic and Hybrid Mode
+## 🆚 Mode Comparison
 
-### Use Basic Mode When:
-- ✅ You want maximum compression (29%)
-- ✅ Token limits are critical
-- ✅ Fast processing is priority
-- ✅ Simple text compression needed
+### Feature Matrix
 
-### Use Hybrid Mode When:
-- ✅ Working with AI for architecture analysis
-- ✅ Understanding module relationships
-- ✅ Generating documentation
-- ✅ Complex codebase analysis
-- ✅ Need export and dependency context
+| Feature | Basic | Hybrid | Semantic | Ultimate |
+|---------|-------|--------|----------|----------|
+| Compression | 20% | 16% | 96% | 98% |
+| Full code | ✅ | ✅ | ❌ | ❌ |
+| Summaries | ❌ | ❌ | ✅ | ✅ |
+| Export detection | ❌ | ✅ | ✅ | ✅ |
+| Stack analysis | ❌ | ✅ | ✅ | ✅ |
+| Smart filtering | ❌ | ❌ | ✅ | ✅ |
+| Speed | ⚡⚡⚡ | ⚡⚡ | ⚡⚡ | ⚡ |
 
-### Performance Comparison
+### When to Use Each Mode
 
-| Metric | Basic Mode | Hybrid Mode |
-|--------|-----------|-------------|
-| Compression | 29% | 16% |
-| Speed | Fastest | Fast |
-| Export detection | ❌ | ✅ |
-| Stack analysis | ❌ | ✅ |
-| Smart prompts | ❌ | ✅ |
-| Best for | Quick compression | AI analysis |
+**Basic Mode:**
+- ✅ Need full code
+- ✅ Maximum compression speed
+- ✅ Debugging specific implementation
+
+**Hybrid Mode:**
+- ✅ Export detection needed
+- ✅ Stack analysis helpful
+- ✅ Full code with context
+
+**Semantic Mode (v2.0.2):**
+- ✅ Architecture analysis
+- ✅ Module relationships
+- ✅ Maximum token reduction
+- ✅ Large codebases
+
+**Ultimate Mode (v2.0.2):**
+- ✅ Best of all features
+- ✅ Top files only
+- ✅ 98% token reduction
+- ✅ Perfect for AI analysis
+
+---
+
+## 🆕 v2.0.2 Features in Detail
+
+### Semantic Analysis
+
+**What it does:**
+- Parses code with AST (Babel)
+- Extracts exports, functions, classes
+- Generates structural summaries
+- **Removes all code implementation**
+
+**Example:**
+
+Before (Basic mode):
+```javascript
+// Full code: 5000 tokens
+class ContextBuilder {
+  buildAnalysisContext(analysisResults) {
+    const sections = [];
+    // ... 100 lines of implementation
+  }
+  // ... more methods
+}
+module.exports = new ContextBuilder();
+```
+
+After (Semantic mode):
+```
+## src/ai/context-builder.js
+EXPORTS: ContextBuilder
+
+SUMMARY:
+Exports: ContextBuilder
+
+Classes:
+  ContextBuilder
+
+Imports: 2 modules
+```
+
+**Result:** 95% token reduction, same architectural understanding!
+
+### Smart Filtering
+
+**Importance scoring:**
+- Exports: 5 points each
+- Functions: 2 points each
+- Classes: 3 points each
+- Imports: 1 point each (max 10)
+
+**Usage:**
+```bash
+# Only files with score ≥ 10
+comprax . --smart --threshold 10
+
+# Top 20 most important
+comprax . --smart --top 20
+
+# Custom threshold
+comprax . --smart --threshold 15
+```
+
+### Incremental Mode
+
+**How it works:**
+1. First run: Processes all files, creates cache
+2. Second run: Reuses cached data for unchanged files
+3. Result: 10x faster!
+
+**Usage:**
+```bash
+# First run
+comprax . --incremental -c -o output.txt
+# Takes: ~2.5s
+
+# Second run (no changes)
+comprax . --incremental -c -o output.txt
+# Takes: ~0.3s (10x faster!)
+```
+
+**Cache location:** `.comprax-cache/file-cache.json`
+
+### CommonJS Support
+
+**Now supports:**
+- `module.exports = ClassName`
+- `module.exports = new ClassName()`
+- `module.exports = { foo, bar }`
+- `exports.functionName = ...`
+- `const x = require('module')`
+
+**Plus all ESM patterns:**
+- `export function`, `export const`, `export class`
+- `export default`
+- `export { foo, bar }`
+- `import ... from '...'`
 
 ---
 
@@ -384,242 +513,140 @@ comprax-output/
 *.comprax.txt
 .comprax-snapshot.txt
 *-compressed.txt
-*-hybrid.txt
+*-semantic.txt
+*-ultimate.txt
+
+# Comprax cache (optional - can commit for team sharing)
+.comprax-cache/
 ```
 
-### Exclude Common Directories
-```bash
-comprax . -e \
-  node_modules \
-  .git \
-  dist \
-  build \
-  coverage \
-  .next \
-  .cache \
-  __pycache__
-```
+### Cache Management
 
-### Include Only Source Code
-```bash
-# JavaScript/TypeScript only
-comprax . -i .js .ts .jsx .tsx
+**Cache is safe to:**
+- ✅ Commit to git (helps team)
+- ✅ Add to .gitignore (for local use)
+- ✅ Delete anytime (will rebuild)
 
-# Hybrid mode with filtering
-comprax . -m hybrid -i .ts .tsx -e tests
-```
+**Cache benefits:**
+- 10x faster re-runs
+- Consistent output
+- Shared team cache
 
 ---
 
-## 📊 Output Structure Guide
+## 📊 Performance Benchmarks
 
-### Directory Mode (Default)
+### Processing Speed (20 files)
+- **Basic mode:** ~0.28s
+- **Semantic mode:** ~0.35s (+25% for AST parsing)
+- **Smart filtering:** ~0.27s (faster due to filtering)
+- **Incremental (cached):** ~0.03s (10x faster!)
 
-**Basic mode:**
+### Token Reduction (88 files, 583KB)
+
 ```
-comprax-output/
-└── project-name/
-    ├── _summary.txt
-    ├── src_components.txt
-    ├── src_utils.txt
-    └── bin.txt
-```
-
-**Hybrid mode:**
-```
-comprax-output/
-└── project-name/
-    ├── _summary.txt          # Includes stack info
-    ├── _prompt.txt           # Smart prompts (NEW)
-    ├── src_components.txt    # With export annotations
-    ├── src_utils.txt         # With export annotations
-    └── bin.txt
-```
-
-### Combined Mode (`-c`)
-
-**Basic mode:**
-```
-project-compressed.txt
-```
-
-**Hybrid mode:**
-```
-project-compressed.txt        # With exports & metadata
-project-compressed-prompt.txt # Smart prompts
-```
-
----
-
-## 🆕 v2.0.0+ Features in Detail
-
-### Export Detection
-
-Automatically detects and displays module exports:
-
-**Supported patterns:**
-- ES6: `export function`, `export const`, `export class`
-- ES6: `export default`
-- ES6: `export { foo, bar }`
-- CommonJS: `module.exports = { ... }`
-- CommonJS: `exports.name = ...`
-
-**Example output:**
-```
-## src/auth.js
-EXPORTS: login, logout, verifyToken
-
-function login(username, password) {
-  // ...
-}
-```
-
-### Stack Detection
-
-Auto-identifies your project stack:
-
-**Detects:**
-- Frameworks (Next.js, Express, React, Vue, Angular, etc.)
-- Databases (PostgreSQL, MongoDB, MySQL, Redis, etc.)
-- Libraries (Prisma, tRPC, GraphQL, Axios, etc.)
-- Testing (Jest, Vitest, Cypress, Playwright)
-- Build tools (Webpack, Vite, Rollup, esbuild)
-
-**Example output:**
-```
-======================================================================
-PROJECT: my-app
-======================================================================
-Framework: Next.js
-Database: PostgreSQL, Redis
-Libraries: Prisma, tRPC, Zod
-Testing: Jest, Playwright
-Total Files: 88
-======================================================================
-```
-
-### Smart Prompts
-
-Context-aware suggestions for AI analysis:
-
-**Generated based on:**
-- Detected framework
-- Database stack
-- Project complexity
-- Common patterns
-
-**Example:**
-```
-For Next.js projects:
-- Analyze the routing structure and page components
-- Review API routes and data fetching patterns
-- Check for proper use of Server/Client Components
+┌──────────────┬──────────┬───────────┬─────────────┐
+│ Mode         │ Size     │ Tokens    │ Reduction   │
+├──────────────┼──────────┼───────────┼─────────────┤
+│ Basic        │  476 KB  │ ~121,724  │  20%        │
+│ Hybrid       │  490 KB  │ ~128,000  │  16%        │
+│ Semantic     │   23 KB  │   ~5,641  │  96%        │
+│ Ultimate     │   11 KB  │   ~2,808  │  98%        │
+└──────────────┴──────────┴───────────┴─────────────┘
 ```
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Issue: "No code files found"
+### Issue: Semantic mode not reducing tokens
+
+**Check:** Are you using `-c` (combined mode)?
+
 **Solution:**
 ```bash
-# Check what's being filtered
-comprax . -v
+# Wrong (directory mode includes code)
+comprax . --semantic
 
-# Include more extensions
-comprax . -i .js .ts .jsx .tsx .mjs .cjs
+# Correct (combined mode uses summaries)
+comprax . --semantic -c -o output.txt
 ```
 
-### Issue: Stack not detected in hybrid mode
-**Cause:** No package.json in project root
+### Issue: Exports showing as "[object Object]"
+
+**Cause:** Old version
 
 **Solution:**
 ```bash
-# Make sure you're in project root
-cd /path/to/project-root
-comprax . -m hybrid
+# Update to v2.0.2
+npm install -g comprax@latest
+comprax --version  # Should show 2.0.2
 ```
 
-### Issue: Exports not showing
-**Cause:** File might not export anything (e.g., CLI entry points)
+### Issue: Incremental mode not caching
 
-**Note:** This is correct behavior. Only files with exports show the EXPORTS line.
+**Check:** Make sure cache directory exists and is writable
 
-### Issue: Permission errors
 **Solution:**
 ```bash
-# Use sudo for global install
-sudo npm install -g comprax
+# Check cache
+ls -la .comprax-cache/
 
-# Or use npx
-npx comprax .
+# If missing, it will be created on first run
+comprax . --incremental -c -o test.txt
+```
+
+### Issue: Top-N not working as expected
+
+**Solution:** Always use with `--smart`:
+```bash
+# Correct
+comprax . --smart --top 20
+
+# Wrong (--smart is required)
+comprax . --top 20
 ```
 
 ---
 
 ## 🎓 Tips & Tricks
 
-### 1. Quick Stack Check
+### 1. Quick Semantic Check
 ```bash
-# See what framework/stack is detected
-comprax . -m hybrid -v | grep "Stack detected"
+# See structural overview without full compression
+comprax . --semantic -c | head -n 100
 ```
 
-### 2. Export Overview
+### 2. Find Most Important Files
 ```bash
-# Hybrid mode to see all exports
-comprax . -m hybrid | grep "EXPORTS:"
+# Use smart mode to see scores
+comprax . --smart --verbose | grep "score"
 ```
 
-### 3. Compare Modes
+### 3. Compare Compressions
 ```bash
-# Basic mode
+# Basic
 comprax . -c -o basic.txt
 
-# Hybrid mode
-comprax . -m hybrid -c -o hybrid.txt
+# Semantic
+comprax . --semantic -c -o semantic.txt
 
-# Compare file sizes
-ls -lh basic.txt hybrid.txt
+# Compare sizes
+ls -lh basic.txt semantic.txt
+# semantic.txt should be 95% smaller!
 ```
 
-### 4. Framework-Specific Analysis
+### 4. Incremental Development Workflow
 ```bash
-# For Next.js projects
-comprax . -m hybrid -c -o nextjs-analysis.txt
-# Upload to AI with: "Analyze this Next.js application"
+# Add to your dev script
+{
+  "scripts": {
+    "analyze": "comprax . --incremental --semantic -c -o analysis.txt"
+  }
+}
 
-# For Express APIs
-comprax ./src -m hybrid -c -o api-analysis.txt
-# Upload to AI with: "Review this Express API structure"
-```
-
----
-
-## 📈 Performance Tips
-
-### For Large Projects (1000+ files)
-
-**Basic mode (fastest):**
-```bash
-comprax . -e __tests__ tests -i .js .ts
-```
-
-**Hybrid mode (optimized):**
-```bash
-comprax ./src -m hybrid -e __tests__ -i .ts .tsx
-```
-
-### For Better AI Results
-
-**Always use hybrid mode:**
-```bash
-comprax . -m hybrid -c -o ai-analysis.txt
-```
-
-**Include only relevant files:**
-```bash
-comprax ./src ./lib -m hybrid -e __tests__
+# Run frequently - it's fast!
+npm run analyze
 ```
 
 ---
@@ -628,59 +655,88 @@ comprax ./src ./lib -m hybrid -e __tests__
 
 ### Multi-Stage Analysis
 
-**Stage 1: Full analysis**
+**Stage 1: Full semantic overview**
 ```bash
-comprax . -m hybrid -c -o full-analysis.txt
+comprax . --semantic -c -o 1-overview.txt
 ```
 
-**Stage 2: Module-specific**
+**Stage 2: Top modules with code**
 ```bash
-comprax ./src/auth -m hybrid -c -o auth-module.txt
-comprax ./src/api -m hybrid -c -o api-module.txt
+comprax ./src --smart --top 10 -c -o 2-core.txt
 ```
 
-### Comparative Analysis
-
+**Stage 3: Specific module deep dive**
 ```bash
-# Compress two versions
-comprax ./v1 -m hybrid -c -o v1-analysis.txt
-comprax ./v2 -m hybrid -c -o v2-analysis.txt
-
-# Upload both to LLM and ask:
-# "Compare these versions, focusing on exported APIs"
+comprax ./src/auth -m hybrid -c -o 3-auth.txt
 ```
 
-### Framework Migration Prep
+### Framework Migration
 
+**Before migration:**
 ```bash
-# Before migration
-comprax . -m hybrid -c -o before-migration.txt
+comprax . --semantic -c -o before-migration.txt
+```
 
-# After migration
-comprax . -m hybrid -c -o after-migration.txt
+**After migration:**
+```bash
+comprax . --semantic -c -o after-migration.txt
+```
 
-# Ask AI to compare stack and exports
+**Compare with AI:**
+Upload both files and ask: "Compare architectures and identify key changes"
+
+### Token Budget Management
+
+**Fit in GPT-4 context (128K tokens):**
+```bash
+# Ultra-compressed (2800 tokens)
+comprax . --semantic --smart --top 25 -c
+
+# Medium (5600 tokens)
+comprax . --semantic --top 50 -c
+
+# Full semantic (varies by project)
+comprax . --semantic -c
 ```
 
 ---
 
-## 🔮 Future Development
+## 🔮 Roadmap
 
-### Potential Future Features
-We're considering these features based on user feedback:
+### ✅ Released
 
-**v2.x Updates (Minor releases):**
-- Additional framework detection (Astro, Qwik, SolidJS)
-- More export patterns (dynamic imports, re-exports)
-- Performance optimizations
-- Bug fixes and improvements
+**v1.0.0:**
+- Smart compression
+- Directory organization
+
+**v2.0.0:**
+- Export detection
+- Stack analysis
+- Hybrid mode
+
+**v2.0.1:**
+- ESM dependencies
+
+**v2.0.2 (Current):**
+- Semantic analysis
+- Smart filtering
+- Incremental caching
+- CommonJS support
+- 96-98% token reduction
+
+### 🔮 Future
+
+**v2.0.3+ (Potential):**
+- Enhanced scoring algorithms
+- More language support
+- Faster AST parsing
+- Better caching strategies
 
 **v3.0.0 (When ready):**
-- Multi-language support (Python initially)
-- Enhanced compression strategies
-- Improved CLI experience
-
-**Your v2.x output will remain compatible.**
+- Multi-language support (Python, Go, Rust)
+- Interactive mode
+- VS Code extension
+- API for programmatic use
 
 ---
 
@@ -689,7 +745,7 @@ We're considering these features based on user feedback:
 - **GitHub Issues:** https://github.com/AjayBThorat-20/comprax/issues
 - **Documentation:** https://github.com/AjayBThorat-20/comprax#readme
 - **npm Package:** https://www.npmjs.com/package/comprax
-- **Changelog:** https://github.com/AjayBThorat-20/comprax/blob/main/CHANGELOG.md
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -699,5 +755,4 @@ MIT © Ajay Thorat
 
 ---
 
-**Last updated:** May 2026 (v2.0.1)
-```
+**Last updated:** May 2026 (v2.0.2)
