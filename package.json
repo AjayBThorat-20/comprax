@@ -1,7 +1,7 @@
 {
   "name": "comprax",
-  "version": "2.0.3",
-  "description": "Intelligent codebase compressor for LLM workflows - reduces token usage by 25-35% while preserving debugging context and code structure. Now with AST-based semantic analysis.",
+  "version": "2.1.0",
+  "description": "Intelligent codebase compressor for LLM workflows with context-aware analysis engine. Reduces token usage while preserving architectural understanding through AST-based semantic analysis, dependency graphs, and behavioral control systems.",
   "main": "src/index.js",
   "type": "module",
   "bin": {
@@ -31,7 +31,11 @@
     "stack-analysis",
     "metadata",
     "ast",
-    "semantic-analysis"
+    "semantic-analysis",
+    "context-engine",
+    "dependency-graph",
+    "function-index",
+    "llm-control"
   ],
   "author": "Ajay Thorat <ajaythorat988@gmail.com>",
   "license": "MIT",

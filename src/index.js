@@ -5,7 +5,7 @@ import { createFilter } from "./core/filter.js"
 import { compress, calculateCompressionRatio } from "./core/compressor.js"
 import { detectExports, formatExports } from "./core/export-detector.js"
 import { detectStack } from "./core/stack-detector.js"
-import { generatePrompt } from "./core/prompt-generator.js"
+import { generatePrompt, generateControlledPrompt } from "./core/prompt-generator.js"
 import { organizeByDirectory, createTreeStructure } from "./core/organizer.js"
 import { 
   formatCombined, 
@@ -22,6 +22,7 @@ import { summarizeStructure } from "./core/semantic/summarizer.js"
 import { scoreStructure, shouldIncludeFile } from "./core/semantic/scorer.js"
 import { loadCache, saveCache, hasFileChanged, getCachedData, setCachedData } from "./core/cache/hash.js"
 import { estimateTokens } from "./utils/token-estimator.js"
+import { buildContext } from "./core/context/context-engine.js"
 import chalk from "chalk"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -105,7 +106,6 @@ export async function run(projectPath, options = {}) {
       const originalSize = code.length
       totalOriginalSize += originalSize
 
-      // Handle large files with placeholder
       if (originalSize > MAX_FILE_SIZE) {
         fileData.push({
           path: file,
@@ -123,7 +123,6 @@ export async function run(projectPath, options = {}) {
         continue
       }
 
-      // Check incremental cache
       if (incremental && !hasFileChanged(file, code, cache)) {
         const cachedData = getCachedData(file, cache)
         if (cachedData && cachedData.data) {
@@ -161,9 +160,7 @@ export async function run(projectPath, options = {}) {
             data.summary = summarizeStructure(data.structure)
           }
 
-          // CRITICAL FIX: Consistent export formatting through same pipeline
           if (data.structure.exports && data.structure.exports.length > 0) {
-            // Convert string array to object array, then format
             data.exports = formatExports(
               data.structure.exports.map(name => ({ name, type: 'ast' }))
             )
@@ -198,9 +195,7 @@ export async function run(projectPath, options = {}) {
     }
   }
 
-  // Deterministic sorting before filtering
   fileData.sort((a, b) => {
-    // Sort by score desc, then by path
     if ((b.score || 0) !== (a.score || 0)) {
       return (b.score || 0) - (a.score || 0)
     }
@@ -217,6 +212,14 @@ export async function run(projectPath, options = {}) {
   
   succeedSpinner(statusMsg)
 
+  // BUILD CONTEXT ENGINE (NEW!)
+  let context = null
+  if (mode === 'hybrid' || semantic) {
+    startSpinner("Building context...")
+    context = buildContext(fileData, absolutePath)
+    succeedSpinner(`Context built: ${context.functionIndex.length} functions, ${Object.keys(context.graph).length} files`)
+  }
+
   if (incremental && cacheDir) {
     saveCache(cacheDir, cache)
   }
@@ -225,7 +228,6 @@ export async function run(projectPath, options = {}) {
     throw new Error("No files could be processed")
   }
 
-  // CRITICAL FIX: Always measure actual code size
   const compressedSize = fileData.reduce((sum, f) => {
     return sum + (f.code?.length || 0)
   }, 0)
@@ -245,7 +247,7 @@ export async function run(projectPath, options = {}) {
   if (combined) {
     startSpinner("Formatting output...")
     const formattedOutput = mode === 'hybrid' || semantic
-      ? formatCombinedHybrid(fileData, absolutePath, stack, projectName, semantic)
+      ? formatCombinedHybrid(fileData, absolutePath, stack, projectName, semantic, context)
       : formatCombined(fileData, absolutePath)
     succeedSpinner("Output formatted")
 
@@ -255,7 +257,13 @@ export async function run(projectPath, options = {}) {
     succeedSpinner(`Output written to: ${outputFile}`)
     
     if (mode === 'hybrid' || semantic) {
-      const promptContent = generatePrompt(stack, fileData.length, projectName)
+      // Generate controlled prompt using context
+  const promptContent = generateControlledPrompt({
+    projectName,
+    stack,
+    contextText: formattedOutput,
+    userTask: "Analyze this codebase and suggest improvements. Focus on architecture, reusability, and potential refactoring opportunities."
+  })
       const promptFile = outputFile.replace('.txt', '-prompt.txt')
       fs.writeFileSync(promptFile, promptContent, 'utf-8')
       console.log(chalk.green(`📝 Generated prompt file: ${promptFile}`))
@@ -303,6 +311,7 @@ export async function run(projectPath, options = {}) {
     if (semantic) console.log(chalk.white("   ✅ Semantic summaries included"))
     if (smart) console.log(chalk.white(`   ✅ Smart filtering (threshold: ${threshold})`))
     if (incremental) console.log(chalk.white("   ✅ Incremental mode enabled"))
+    if (context) console.log(chalk.white(`   ✅ Context engine: ${context.functionIndex.length} functions indexed`))
     console.log()
   }
 }

@@ -17,7 +17,7 @@ export function formatCombined(fileData, basePath) {
   return output
 }
 
-export function formatCombinedHybrid(fileData, basePath, stack, projectName, semantic = false) {
+export function formatCombinedHybrid(fileData, basePath, stack, projectName, semantic = false, context = null) {
   let output = ""
   
   output += "=".repeat(70) + "\n"
@@ -43,19 +43,78 @@ export function formatCombinedHybrid(fileData, basePath, stack, projectName, sem
   output += `Total Files: ${fileData.length}\n`
   output += "=".repeat(70) + "\n\n"
 
+  // FUNCTION INDEX
+  if (context && context.functionIndex && context.functionIndex.length > 0) {
+    output += "=".repeat(70) + "\n"
+    output += "FUNCTION INDEX\n"
+    output += "=".repeat(70) + "\n"
+    
+    const displayCount = Math.min(context.functionIndex.length, 50)
+    for (let i = 0; i < displayCount; i++) {
+      const fn = context.functionIndex[i]
+      const params = fn.params || ""
+      const relFile = fn.file.replace(basePath + "/", "")
+      output += `- ${fn.name}(${params}) → ${relFile}\n`
+    }
+    
+    if (context.functionIndex.length > 50) {
+      output += `... and ${context.functionIndex.length - 50} more functions\n`
+    }
+    
+    output += "\n"
+  }
+
+  // EDIT RULES
+  if (context) {
+    output += "=".repeat(70) + "\n"
+    output += "EDIT RULES\n"
+    output += "=".repeat(70) + "\n"
+    output += "- Do NOT rename existing functions listed in FUNCTION INDEX\n"
+    output += "- Do NOT duplicate logic that already exists\n"
+    output += "- REUSE functions from FUNCTION INDEX instead of recreating\n"
+    output += "- Modify only necessary files to implement changes\n"
+    output += "- Keep existing architecture and module structure unchanged\n"
+    output += "- Respect DEPENDS_ON relationships when making changes\n"
+    output += "\n"
+  }
+
+  // FILE SECTIONS
   for (const file of fileData) {
     const relativePath = path.relative(basePath, file.path)
     output += `## ${relativePath}\n`
     
+    // ROLE
+    if (context && context.fileRoles && context.fileRoles[file.path]) {
+      output += `ROLE: ${context.fileRoles[file.path]}\n`
+    }
+    
+    // EXPORTS
     if (file.exports) {
       output += `EXPORTS: ${file.exports}\n`
     }
     
-    // CRITICAL FIX: Always include code, optionally add summary first
+    // DEPENDS_ON
+    if (context && context.graph && context.graph[file.path]) {
+      const deps = context.graph[file.path]
+      if (deps.length > 0) {
+        output += `DEPENDS_ON: ${deps.join(", ")}\n`
+      }
+    }
+    
+    // USED_BY
+    if (context && context.usageMap) {
+      const usedBy = context.usageMap[relativePath] || []
+      if (usedBy.length > 0) {
+        output += `USED_BY: ${usedBy.join(", ")}\n`
+      }
+    }
+    
+    // SUMMARY
     if (semantic && file.summary) {
       output += `\nSUMMARY:\n${file.summary}\n\n`
     }
     
+    // CODE
     output += file.code.trim() + "\n\n"
   }
 
@@ -85,7 +144,6 @@ export function formatDirectoryHybrid(files, dirName, semantic = false) {
       output += `EXPORTS: ${file.exports}\n`
     }
     
-    // CRITICAL FIX: Always include code, optionally add summary first
     if (semantic && file.summary) {
       output += `\nSUMMARY:\n${file.summary}\n\n`
     }
